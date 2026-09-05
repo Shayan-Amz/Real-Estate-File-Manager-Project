@@ -13,6 +13,7 @@ set_exception_handler(function($e) {
 });
 
 require_once 'config.php';
+require_once __DIR__ . '/stt.php';   // 🎙️ موتور تبدیل گفتار به متن (جارویس)
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: ' . ALLOWED_ORIGIN);
@@ -282,68 +283,21 @@ if ($method === 'POST') {
         // ---------------------------------------------------------
         // 🎙️ سیستم تبدیل صوت به متن جارویس (Whisper Large v3)
         // ---------------------------------------------------------
+        // 🎙️ تبدیل گفتار به متن — منطق کامل در stt.php است (چندارائه‌دهنده)
         if ($action === 'transcribe_audio') {
             if (strtolower($userPlan) !== 'vip') {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'error' => 'دسترسی غیرمجاز! فرمان صوتی فقط برای مشترکین VIP فعال است.']);
+                echo json_encode(['success' => false, 'error' => 'دسترسی غیرمجاز! فرمان صوتی فقط برای مشترکین VIP فعال است. (plan_type آژانس باید vip باشد)']);
                 exit;
             }
 
-            if (!isset($_FILES['audio_file']) || $_FILES['audio_file']['error'] !== UPLOAD_ERR_OK) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'فایل صوتی در سرور دریافت نشد یا فرمت نامعتبر است.']);
-                exit;
-            }
+            $stt = stt_transcribe($_FILES['audio_file'] ?? null);
 
-            $hf_api_key = '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'; 
-            $fileTmpName = $_FILES['audio_file']['tmp_name'];
-            $fileData = file_get_contents($fileTmpName);
-
-            if (empty($fileData)) {
-                echo json_encode(['success' => false, 'error' => 'محتوای فایل صوتی خالی است.']);
-                exit;
-            }
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://api-inference.huggingface.co/models/openai/whisper-large-v3'); 
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Authorization: Bearer " . $hf_api_key,
-                "Content-Type: audio/webm"
-            ]);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-
-            if ($curlError) {
-                echo json_encode(['success' => false, 'error' => 'خطای ارتباط با موتور پردازش صوت: ' . $curlError]);
-                exit;
-            }
-
-            $responseData = json_decode($response, true);
-
-            if ($httpCode === 200 && !empty($responseData['text'])) {
-                echo json_encode([
-                    'success' => true,
-                    'text' => trim($responseData['text'])
-                ]);
-            } elseif (isset($responseData['error']) && stripos($responseData['error'], 'loading') !== false) {
-                echo json_encode([
-                    'success' => false,
-                    'error' => 'مدل صوتی در حال لود اولیه روی سرور است. لطفاً ۵ ثانیه دیگر مجدداً تلاش فرمایید.'
-                ]);
+            if ($stt['ok']) {
+                echo json_encode(['success' => true, 'text' => $stt['text'], 'provider' => $stt['provider']], JSON_UNESCAPED_UNICODE);
             } else {
-                error_log("Whisper API Error (" . $httpCode . "): " . $response);
-                echo json_encode([
-                    'success' => false,
-                    'error' => 'خطا در تبدیل گفتار به متن.',
-                    'details' => $responseData['error'] ?? 'خطای ناشناخته'
-                ]);
+                http_response_code(502);
+                echo json_encode(['success' => false, 'error' => $stt['error'], 'provider' => $stt['provider']], JSON_UNESCAPED_UNICODE);
             }
             exit;
         }
@@ -363,8 +317,9 @@ if ($method === 'POST') {
                 exit;
             }
 
-            $workerUrl = "https://ai.shayan-api.ir/api/v1/chat/completions";
-            $apiKey = "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";
+            // ⚡ آدرس و کلید به config.php منتقل شد (قبلاً hardcoded و داخل گیت بود)
+            $workerUrl = OPENROUTER_URL;
+            $apiKey    = OPENROUTER_API_KEY;
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
             $systemPrompt = 'شما "جارویس" هستید، دستیار فوق‌هوشمند املاک. 
@@ -421,7 +376,7 @@ if ($method === 'POST') {
 }';
 
             $data = [
-                "model" => "laguna-xs-2.1:free", // مدل قدرتمند، رایگان و هوشمند
+                "model" => OPENROUTER_MODEL,
                 "messages" => [
                     ["role" => "system", "content" => $systemPrompt],
                     ["role" => "user", "content" => $userText]
@@ -432,19 +387,22 @@ if ($method === 'POST') {
             $ch = curl_init($workerUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);   // ⚡ قبلاً false بود (این درخواست کلید API را حمل می‌کند)
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            //curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); // حداکثر ۵ ثانیه برای پیدا کردن سرور
-            //curl_setopt($ch, CURLOPT_TIMEOUT, 15);       // حداکثر ۱۵ ثانیه برای کل عملیات و دریافت جواب
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, STT_CONNECT_TIMEOUT); // ⚡ قبلاً بی‌نهایت بود و ورکر PHP را اشغال می‌کرد
+            curl_setopt($ch, CURLOPT_TIMEOUT, STT_TIMEOUT);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $apiKey,
                 'HTTP-Referer: https://test.amlak-e-man.ir'
             ]);
 
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $response  = curl_exec($ch);
+            $httpCode  = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);   // ⚡ باید قبل از curl_close خوانده شود؛ قبلاً بعد از آن خوانده می‌شد و همیشه خالی بود
             curl_close($ch);
 
             $aiResult = json_decode($response, true);
@@ -473,18 +431,17 @@ if ($method === 'POST') {
                 }
             // ... (کدهای قبلی)
             } else {
-                // 🕵️‍♂️ دیباگر قدرتمند برای پیدا کردن مشکل واقعی
-                $curlError = curl_error($ch);
-                $errorReason = "کد وضعیت: " . $httpCode . " | ";
-                
-                if ($curlError) {
-                    $errorReason .= "قطعی شبکه: " . $curlError;
-                } else {
-                    // گرفتن پیام ارور مستقیم از OpenRouter
-                    $errorReason .= "پاسخ سرور: " . $response;
+                // ⚡ جزئیات فقط در لاگ سرور؛ پاسخ خام ارائه‌دهنده به کلاینت نشت نمی‌کند
+                error_log('[Jarvis] HTTP ' . $httpCode . ' curlErr=' . $curlError . ' body=' . substr((string) $response, 0, 800));
+
+                $errorReason = 'کد وضعیت: ' . $httpCode;
+                if ($curlError !== '') {
+                    $errorReason .= ' | قطعی شبکه: ' . $curlError;
+                } elseif ($httpCode === 401 || $httpCode === 403) {
+                    $errorReason .= ' | کلید هوش مصنوعی معتبر نیست.';
                 }
-                
-                echo json_encode(['error' => 'ارور دقیق: ' . $errorReason]);
+
+                echo json_encode(['error' => 'خطا در ارتباط با موتور هوش مصنوعی. (' . $errorReason . ')'], JSON_UNESCAPED_UNICODE);
             }
             exit;
         }
