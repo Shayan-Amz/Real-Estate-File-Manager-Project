@@ -40,17 +40,10 @@ function sanitizeInput($data) {
     return $data;
 }
 
-function generateSecureToken($agency, $role, $name, $salt) {
-    $payload = base64_encode(json_encode(['a' => $agency, 'r' => $role, 'n' => $name, 'exp' => time() + 108000]));
+// 🛡️ اضافه شدن متغیر plan به توکن امنیتی برای جلوگیری از هک در مرورگر
+function generateSecureToken($agency, $role, $name, $salt, $plan = 'Basic') {
+    $payload = base64_encode(json_encode(['a' => $agency, 'r' => $role, 'n' => $name, 'p' => $plan, 'exp' => time() + 108000]));
     return $payload . '.' . hash_hmac('sha256', $payload, $salt);
-}
-
-function verifySecureToken($token, $agency, $role, $name, $salt) {
-    if (empty($token) || strpos($token, '.') === false) return false;
-    list($payload, $signature) = explode('.', $token);
-    if (!hash_equals(hash_hmac('sha256', $payload, $salt), $signature)) return false;
-    $dec = json_decode(base64_decode($payload), true);
-    return ($dec && $dec['a'] === $agency && $dec['r'] === $role && $dec['n'] === $name && $dec['exp'] >= time());
 }
 
 try {
@@ -80,6 +73,12 @@ try {
                 $pdo->exec("ALTER TABLE demands ADD COLUMN deposit BIGINT(20) DEFAULT 0 AFTER budget");
                 $pdo->exec("ALTER TABLE demands ADD COLUMN rent BIGINT(20) DEFAULT 0 AFTER deposit");
             }
+            // اطمینان از وجود ستون نوع پلن در آژانس‌ها
+            try { $pdo->query("SELECT plan_type FROM agencies LIMIT 1"); } 
+            catch (PDOException $e) { $pdo->exec("ALTER TABLE agencies ADD COLUMN plan_type VARCHAR(20) DEFAULT 'Basic' AFTER managerName"); }
+            // اطمینان از وجود ستون آخرین بازدید برای سیستم ضربان قلب
+            try { $pdo->query("SELECT lastSeen FROM members LIMIT 1"); } 
+            catch (PDOException $e) { $pdo->exec("ALTER TABLE members ADD COLUMN lastSeen INT(11) DEFAULT 0"); }
         }
     } catch (Exception $e) { }
 
@@ -101,6 +100,7 @@ $authToken = $_SERVER['HTTP_X_AUTH_TOKEN'] ?? '';
 
 $userRole = 'مهمان';
 $userName = '';
+$userPlan = 'Basic';
 $isFullyAuthenticated = false;
 
 if (!empty($authToken) && strpos($authToken, '.') !== false) {
@@ -111,6 +111,8 @@ if (!empty($authToken) && strpos($authToken, '.') !== false) {
             $userRole = $dec['r'];
             $userName = $dec['n'];
             $tokenAgencyId = $dec['a'];
+            $userPlan = $dec['p'] ?? 'Basic'; 
+            
             if ($tokenAgencyId === $agencyId) {
                 if ($userRole === 'مشاور') {
                     $stmtCheck = $pdo->prepare("SELECT status FROM members WHERE name = ? AND agencyId = ?");
@@ -145,16 +147,7 @@ function formatSqlDate($isoDate) {
 // ==========================================
 // GET METHODS
 // ==========================================
-// این تغییر باعث می‌شود getData هم در GET و هم در POST اجرا شود
 if ($method === 'GET' || $action === 'getData') {
-    if ($action === 'ping') {
-        if ($isFullyAuthenticated && $userRole === 'مشاور') {
-            $pdo->prepare("UPDATE members SET lastSeen = ? WHERE name = ? AND agencyId = ?")->execute([time(), $userName, $agencyId]);
-            markSystemUpdated($pdo);
-        }
-        echo json_encode(['response' => ['success' => true]]); exit;
-    }
-
     if ($action === 'getData') {
         $clientHash = $_SERVER['HTTP_X_DATA_HASH'] ?? '';
         $stmtSys = $pdo->query("SELECT conf_val FROM sys_config WHERE conf_key = 'last_update'");
@@ -167,18 +160,18 @@ if ($method === 'GET' || $action === 'getData') {
         $out = ['agencies' => (object)[], 'properties' => (object)[], 'demands' => (object)[], 'members' => (object)[]];
         
         if ($isFullyAuthenticated && $userRole === 'مدیر') {
-            $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, managerName, expireAt, createdAt FROM agencies WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, managerName, expireAt, createdAt, plan_type FROM agencies WHERE id = ?");
             $stmt->execute([$agencyId]);
             if($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
-            $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2 FROM agencies WHERE id != ?");
+            $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, plan_type FROM agencies WHERE id != ?");
             $stmt->execute([$agencyId]);
             while($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
             
         } elseif ($isFullyAuthenticated && $userRole === 'مشاور') {
-            $stmt = $pdo->query("SELECT id, name, city, phone, phone2 FROM agencies");
+            $stmt = $pdo->query("SELECT id, name, city, phone, phone2, plan_type FROM agencies");
             while($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
         } else {
-            $stmt = $pdo->query("SELECT id, name, city, phone, phone2 FROM agencies");
+            $stmt = $pdo->query("SELECT id, name, city, phone, phone2, plan_type FROM agencies");
             while($row = $stmt->fetch()) { 
                 $maskedId = 'ag_' . substr(hash('sha256', $row['id'] . APP_SALT), 0, 8);
                 $row['id'] = $maskedId;
@@ -249,13 +242,17 @@ if ($method === 'GET' || $action === 'getData') {
 // POST METHODS
 // ==========================================
 if ($method === 'POST') {
-    $rawInput = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($rawInput)) $rawInput = [];
-    
-    // ۱. اول دیتا را از JSON تمیز کن
-    $input = sanitizeInput($rawInput);
+            $rawInput = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($rawInput)) $rawInput = [];
+            
+            // ⚡ ادغام دیتای JSON متنی با دیتای فایل‌های صوتی (حیاتی برای عبور از فایروال)
+            $input = sanitizeInput(array_merge($_POST, $rawInput));
+            
+            // ⚡ تشخیص قطعیِ اکشنِ درخواستی تا سرور گیج نشود
+            if (empty($action)) {
+                $action = $input['action'] ?? '';
+            }
 
-    // ۲. بعد از اینکه $input ساخته شد، حالا کلید امنیتی را چک کن
     $secretApiKey = "AmLaK_Super_Secret_2026!";
     if (!isset($input['api_key']) || $input['api_key'] !== $secretApiKey) {
         http_response_code(403);
@@ -264,6 +261,233 @@ if ($method === 'POST') {
     }
 
     try {
+        // 💓 سیستم ضربان قلب (پینگ آنلاین بودن)
+        if ($action === 'ping') {
+            if ($isFullyAuthenticated && $userRole === 'مشاور') {
+                $pdo->prepare("UPDATE members SET lastSeen = ? WHERE name = ? AND agencyId = ?")->execute([time(), $userName, $agencyId]);
+            }
+            echo json_encode(['response' => ['success' => true]]); 
+            exit;
+        }
+// =====================================
+        // =====================================
+        // 🤖 مغز متفکر جارویس (نسخه هوشمند و درک مطلب)
+        // =====================================
+      // ---------------------------------------------------------
+        // 🎙️ سیستم تبدیل صوت به متن جارویس (نسخه Hugging Face)
+        // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // 🎙️ سیستم تبدیل صوت به متن جارویس (Whisper Large v3)
+        // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // 🎙️ سیستم تبدیل صوت به متن جارویس (Whisper Large v3)
+        // ---------------------------------------------------------
+        if ($action === 'transcribe_audio') {
+            if (strtolower($userPlan) !== 'vip') {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'دسترسی غیرمجاز! فرمان صوتی فقط برای مشترکین VIP فعال است.']);
+                exit;
+            }
+
+            if (!isset($_FILES['audio_file']) || $_FILES['audio_file']['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'فایل صوتی در سرور دریافت نشد یا فرمت نامعتبر است.']);
+                exit;
+            }
+
+            $hf_api_key = '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'; 
+            $fileTmpName = $_FILES['audio_file']['tmp_name'];
+            $fileData = file_get_contents($fileTmpName);
+
+            if (empty($fileData)) {
+                echo json_encode(['success' => false, 'error' => 'محتوای فایل صوتی خالی است.']);
+                exit;
+            }
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://api-inference.huggingface.co/models/openai/whisper-large-v3'); 
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Authorization: Bearer " . $hf_api_key,
+                "Content-Type: audio/webm"
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                echo json_encode(['success' => false, 'error' => 'خطای ارتباط با موتور پردازش صوت: ' . $curlError]);
+                exit;
+            }
+
+            $responseData = json_decode($response, true);
+
+            if ($httpCode === 200 && !empty($responseData['text'])) {
+                echo json_encode([
+                    'success' => true,
+                    'text' => trim($responseData['text'])
+                ]);
+            } elseif (isset($responseData['error']) && stripos($responseData['error'], 'loading') !== false) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'مدل صوتی در حال لود اولیه روی سرور است. لطفاً ۵ ثانیه دیگر مجدداً تلاش فرمایید.'
+                ]);
+            } else {
+                error_log("Whisper API Error (" . $httpCode . "): " . $response);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'خطا در تبدیل گفتار به متن.',
+                    'details' => $responseData['error'] ?? 'خطای ناشناخته'
+                ]);
+            }
+            exit;
+        }
+        if ($action === 'jarvisProcess') {
+            if (strtolower($userPlan) !== 'vip') {
+                echo json_encode(['error' => 'دسترسی غیرمجاز! جارویس فقط برای مشترکین VIP فعال است.']);
+                exit;
+            }
+
+            $userText = "";
+            
+            // گرفتن دقیق متنی که کاربر تایپ کرده یا با موتور صوتی تبدیل به متن شده
+            if (!empty($input['text'])) {
+                $userText = trim($input['text']);
+            } else {
+                echo json_encode(['error' => 'دستوری دریافت نشد. لطفاً صحبت کنید یا تایپ کنید.']); 
+                exit;
+            }
+
+            $workerUrl = "https://ai.shayan-api.ir/api/v1/chat/completions";
+            $apiKey = "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";
+
+            // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
+            $systemPrompt = 'شما "جارویس" هستید، دستیار فوق‌هوشمند املاک. 
+وظیفه شما استخراج دقیق مشخصات ملک از پیام کاربر است.
+
+قوانین تشخیص کاربری (usage):
+- "آپارتمان"، "خانه"، "منزل"، "سوییت" -> مسکونی
+- "ویلا"، "خانه باغ" -> ویلایی
+- "مغازه"، "پاساژ"، "دکان"، "تجاری" -> تجاری
+- "دفتر کار"، "مطب"، "شرکت" -> اداری
+- "زمین"، "کلنگی"، "خاک" -> زمین/کلنگی
+- "باغ"، "باغچه" -> باغ
+
+قوانین واگذاری (dealType):
+- خرید / فروش -> فروش
+- رهن و اجاره / اجاره -> رهن و اجاره
+- رهن کامل -> رهن کامل
+
+قوانین استخراج و تفکیک (بسیار مهم):
+۱. نام مالک باید در کلید referrer و تلفن مالک در کلید phone قرار گیرد.
+۲. تعداد خواب (rooms)، طبقه (floor) و واحد (unit) حتما باید استخراج شوند و فقط شامل عدد باشند.
+۳. امکانات (hasElevator, hasParking, hasStorage) فقط باید true یا false باشند.
+۴. سال ساخت (yearBuilt) فقط عدد باشد.
+۵. تفکیک آدرس: نام محله یا محدوده کلی را در (location) بنویسید و ادامه آدرس دقیق (خیابان، کوچه، پلاک و...) را در (exactAddress) قرار دهید.
+۶. قانون توضیحات: به هیچ وجه اطلاعاتی که در فیلدهای بالا (مثل خواب، طبقه، قیمت، امکانات و...) ثبت کرده‌اید را در کلیدهای (description) و (internalNote) تکرار نکنید! در توضیحات فقط ویژگی‌های اضافه (مثل غرق نور، نیاز به بازسازی، معاوضه با ماشین، ویو ابدی و...) را بنویسید.
+
+شما باید فقط و فقط یک خروجی JSON معتبر برگردانید. تمام کلیدها باید دقیقا مطابق ساختار زیر باشند و برای مقادیر نامشخص از null استفاده کنید (مقادیر عددی را بدون کوتیشن بنویسید):
+{
+  "ai_message": "پیام تایید کوتاه به فارسی",
+  "action": "openPropertyModal",
+  "params": {
+    "dealType": null,
+    "usage": null,
+    "area": null,
+    "price": null,
+    "deposit": null,
+    "rent": null,
+    "location": null,
+    "city": null,
+    "exactAddress": null,
+    "referrer": null,
+    "phone": null,
+    "rooms": null,
+    "floor": null,
+    "unit": null,
+    "hasElevator": false,
+    "hasParking": false,
+    "hasStorage": false,
+    "description": null,
+    "internalNote": null,
+    "yearBuilt": null,
+    "buildArea": null
+  }
+}';
+
+            $data = [
+                "model" => "laguna-xs-2.1:free", // مدل قدرتمند، رایگان و هوشمند
+                "messages" => [
+                    ["role" => "system", "content" => $systemPrompt],
+                    ["role" => "user", "content" => $userText]
+                ],
+                "response_format" => ["type" => "json_object"]
+            ];
+
+            $ch = curl_init($workerUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            //curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); // حداکثر ۵ ثانیه برای پیدا کردن سرور
+            //curl_setopt($ch, CURLOPT_TIMEOUT, 15);       // حداکثر ۱۵ ثانیه برای کل عملیات و دریافت جواب
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+                'HTTP-Referer: https://test.amlak-e-man.ir'
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            $aiResult = json_decode($response, true);
+            
+            if ($httpCode == 200 && isset($aiResult['choices'][0]['message']['content'])) {
+                $aiContent = $aiResult['choices'][0]['message']['content'];
+                
+                // 🧹 پاک‌کننده هوشمند: حذف کدهای تزئینی که هوش مصنوعی تولید می‌کند
+                $aiContent = preg_replace('/```json\s*/', '', $aiContent);
+                $aiContent = preg_replace('/```\s*/', '', $aiContent);
+                $aiContent = trim($aiContent);
+
+                $parsedData = json_decode($aiContent, true);
+
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    echo json_encode([
+                        'response' => [
+                            'success' => true,
+                            'ai_message' => $parsedData['ai_message'] ?? "آماده شد.",
+                            'action' => $parsedData['action'] ?? null,
+                            'params' => $parsedData['params'] ?? []
+                        ]
+                    ]);
+                } else {
+                    echo json_encode(['error' => 'خطا در خواندن اطلاعات هوش مصنوعی.']);
+                }
+            // ... (کدهای قبلی)
+            } else {
+                // 🕵️‍♂️ دیباگر قدرتمند برای پیدا کردن مشکل واقعی
+                $curlError = curl_error($ch);
+                $errorReason = "کد وضعیت: " . $httpCode . " | ";
+                
+                if ($curlError) {
+                    $errorReason .= "قطعی شبکه: " . $curlError;
+                } else {
+                    // گرفتن پیام ارور مستقیم از OpenRouter
+                    $errorReason .= "پاسخ سرور: " . $response;
+                }
+                
+                echo json_encode(['error' => 'ارور دقیق: ' . $errorReason]);
+            }
+            exit;
+        }
         if ($action === 'changeMyPassword') {
             if (!$isFullyAuthenticated) { echo json_encode(['error' => 'غیرمجاز.']); exit; }
             $newPin = $input['newPin'] ?? '';
@@ -304,11 +528,12 @@ if ($method === 'POST') {
             markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
 
+        // 🛡️ در هنگام لاگین، پلن آژانس از دیتابیس خوانده شده و در توکن مُهر و موم می‌شود
         if ($action === 'loginManager') {
             $reqAgencyId = $input['agencyId'] ?? $agencyId;
             if (!$reqAgencyId) { echo json_encode(['error' => 'کد آژانس نامعتبر']); exit; }
             
-            $stmt = $pdo->prepare("SELECT adminPin, managerName, name, expireAt FROM agencies WHERE id = ?"); $stmt->execute([$reqAgencyId]);
+            $stmt = $pdo->prepare("SELECT adminPin, managerName, name, expireAt, plan_type FROM agencies WHERE id = ?"); $stmt->execute([$reqAgencyId]);
             $ag = $stmt->fetch(); if (!$ag) { echo json_encode(['error' => 'آژانس یافت نشد']); exit; }
             
             if (strtotime($ag['expireAt']) < time()) { echo json_encode(['error' => 'اشتراک آژانس پایان یافته است.']); exit; }
@@ -316,7 +541,7 @@ if ($method === 'POST') {
             $isMatch = (password_get_info($ag['adminPin'])['algo'] === 0) ? ($ag['adminPin'] === $input['pin']) : password_verify($input['pin'], $ag['adminPin']);
             if (!$isMatch) { echo json_encode(['error' => 'رمز عبور اشتباه است']); exit; }
             
-            echo json_encode(['response' => ['success' => true, 'token' => generateSecureToken($reqAgencyId, 'مدیر', $ag['managerName']?:'مدیر', APP_SALT), 'managerName' => $ag['managerName'], 'agencyName' => $ag['name']]]); exit;
+            echo json_encode(['response' => ['success' => true, 'token' => generateSecureToken($reqAgencyId, 'مدیر', $ag['managerName']?:'مدیر', APP_SALT, $ag['plan_type'] ?? 'Basic'), 'managerName' => $ag['managerName'], 'agencyName' => $ag['name'], 'plan' => $ag['plan_type'] ?? 'Basic']]); exit;
         }
 
         if ($action === 'loginConsultant') {
@@ -326,7 +551,7 @@ if ($method === 'POST') {
             $name = $input['name'] ?? ''; $pin = $input['pin'] ?? '';
             if (!$name || !$pin) { echo json_encode(['error' => 'اطلاعات ناقص است.']); exit; }
 
-            $stmtAg = $pdo->prepare("SELECT name, expireAt FROM agencies WHERE id = ?"); $stmtAg->execute([$reqAgencyId]);
+            $stmtAg = $pdo->prepare("SELECT name, expireAt, plan_type FROM agencies WHERE id = ?"); $stmtAg->execute([$reqAgencyId]);
             $ag = $stmtAg->fetch();
             if (!$ag) { echo json_encode(['error' => 'آژانس یافت نشد']); exit; }
             if (strtotime($ag['expireAt']) < time()) { echo json_encode(['error' => 'اشتراک آژانس پایان یافته است.']); exit; }
@@ -341,7 +566,7 @@ if ($method === 'POST') {
                 if ($mem['status'] === 'pending') { echo json_encode(['error' => 'حساب در انتظار تایید مدیر است.']); exit; }
                 
                 $pdo->prepare("UPDATE members SET lastSeen = ? WHERE id = ?")->execute([time(), $mem['id']]);
-                echo json_encode(['response' => ['success' => true, 'token' => generateSecureToken($reqAgencyId, 'مشاور', $name, APP_SALT), 'id' => $mem['id'], 'agencyName' => $ag['name']]]); exit;
+                echo json_encode(['response' => ['success' => true, 'token' => generateSecureToken($reqAgencyId, 'مشاور', $name, APP_SALT, $ag['plan_type'] ?? 'Basic'), 'id' => $mem['id'], 'agencyName' => $ag['name'], 'plan' => $ag['plan_type'] ?? 'Basic']]); exit;
             } else {
                 $mId = uniqid('mem_');
                 $pdo->prepare("INSERT INTO members (id, agencyId, name, role, status, pin, joinedAt, lastSeen) VALUES (?,?,?,?,?,?,?,?)")
@@ -353,6 +578,26 @@ if ($method === 'POST') {
         
         if (!$isFullyAuthenticated) { echo json_encode(['error' => 'غیرمجاز.']); exit; }
 
+        if ($action === 'getNotes') {
+            $stmt = $pdo->prepare("SELECT note_text FROM personal_notes WHERE agencyId = ? AND username = ?");
+            $stmt->execute([$agencyId, $userName]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode(['response' => ['note_text' => $row ? $row['note_text'] : '']]);
+            exit;
+        }
+
+        if ($action === 'saveNotes') {
+            $note_text = '';
+            if (isset($input['note_text'])) { $note_text = $input['note_text']; }
+            elseif (isset($input['data']['note_text'])) { $note_text = $input['data']['note_text']; }
+            elseif (isset($rawInput['note_text'])) { $note_text = $rawInput['note_text']; }
+            
+            $stmt = $pdo->prepare("INSERT INTO personal_notes (agencyId, username, note_text) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE note_text = ?");
+            $stmt->execute([$agencyId, $userName, $note_text, $note_text]);
+            echo json_encode(['response' => ['success' => true]]);
+            exit;
+        }
+      
         if ($action === 'saveMember') {
             if ($userRole !== 'مدیر') { echo json_encode(['error' => 'غیرمجاز']); exit; }
             $pdo->prepare("UPDATE members SET status = ? WHERE id = ? AND agencyId = ?")->execute([$input['status'], $input['id'], $agencyId]);

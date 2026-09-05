@@ -1,9 +1,9 @@
 <?php
 // 🔴 این فایل نباید در دسترس عموم باشد
 define('DB_HOST', 'localhost');             
-define('DB_NAME', 'owihpfoa_Amlak-E-Man_Database'); 
-define('DB_USER', 'owihpfoa_Amlak-E-Man_Database'); 
-define('DB_PASS', 'Mx3eu4rR7ydyVyynfnGM');  
+define('DB_NAME', 'owihpfoa_test_db'); 
+define('DB_USER', 'owihpfoa_test_db'); 
+define('DB_PASS', 'JY8FLFa48fQmVFbnprAP');  
 
 // رمز عبور مدیریت کل که هش (Hash) شده است (این هش معادل کلمه 'MyStrongPassword#2026' است)
 // برای تغییر آن در آینده باید هش جدید را اینجا بگذارید

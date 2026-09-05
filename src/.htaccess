@@ -1,0 +1,6 @@
+AuthName "Super Admin"
+AuthGroupFile /dev/null
+AuthType Basic
+AuthUserFile /home/owihpfoa/domains/test.amlak-e-man.ir/.htpasswd/public_html/.htpasswd
+require valid-user
+ErrorDocument 401 "Unauthorized Access"

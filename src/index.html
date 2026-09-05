@@ -6,7 +6,7 @@
     <title>سیستم یکپارچه املاک</title>
     
     <!-- ⚡ اتصال به شناسنامه اپلیکیشن (PWA) -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="icon.svg">
     <link rel="stylesheet" href="https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.css"/>
@@ -23,7 +23,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="املاک من">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="stylesheet" href="style.css">
+    <!--<link rel="stylesheet" href="style.css"> -->
     
     <!-- 🛡️ فراخوانی فونت ۱۰۰٪ لوکال (لینک‌های خارجی حذف شد) -->
     <style>
@@ -36,7 +36,7 @@
         }
     </style>
     
-    <link rel="stylesheet" href="assets/leaflet.css" />
+   <!-- <link rel="stylesheet" href="assets/leaflet.css" /> -->
     <link rel="stylesheet" href="assets/jalalidatepicker.min.css" />
 
     <style>
@@ -420,94 +420,6 @@
         </div>
 <style>
 .pricing-section { padding: 60px 20px; text-align: center; position: relative; z-index: 10; }
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1100px; margin: 40px auto; align-items: center; }
-
-.plan-card { 
-    background: var(--bg-card); 
-    padding: 40px 24px; 
-    border-radius: 30px; 
-    border: 1px solid var(--border); 
-    position: relative; 
-    transition: 0.3s; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-}
-
-/* ⚡ افکت طعمه (Decoy) برای پلن حرفه‌ای */
-.plan-card.popular { 
-    border: 2px solid var(--primary); 
-    transform: scale(1.05); 
-    box-shadow: 0 20px 50px -10px rgba(37, 99, 235, 0.3); 
-    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(37, 99, 235, 0.03) 100%);
-    z-index: 2;
-}
-
-.plan-badge { 
-    position: absolute; top: -15px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: white; 
-    padding: 6px 20px; border-radius: 20px; font-size: 13px; font-weight: 900; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-}
-
-.plan-icon { font-size: 45px; margin-bottom: 20px; text-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-.plan-name { font-size: 22px; font-weight: 900; margin-bottom: 10px; color: var(--text-main); }
-.plan-price { font-size: 32px; font-weight: 900; color: var(--primary); margin-bottom: 5px; }
-.plan-period { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; font-weight: bold; }
-
-.plan-features { list-style: none; padding: 0; margin: 0 0 30px 0; text-align: right; width: 100%; }
-.plan-features li { margin-bottom: 14px; font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 8px; font-weight: bold; }
-.plan-features li::before { content: '✅'; font-size: 14px; }
-.plan-features li.disabled { color: var(--text-muted); opacity: 0.5; font-weight: normal; }
-.plan-features li.disabled::before { content: '🔒'; filter: grayscale(100%); }
-</style>
-
-<style>
-.pricing-section { padding: 60px 20px; text-align: center; position: relative; z-index: 10; }
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1100px; margin: 40px auto; align-items: center; }
-
-.plan-card { 
-    background: var(--bg-card); 
-    padding: 40px 24px; 
-    border-radius: 30px; 
-    border: 1px solid var(--border); 
-    position: relative; 
-    transition: 0.3s; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-}
-
-.plan-card.popular { 
-    border: 2px solid var(--primary); 
-    transform: scale(1.05); 
-    box-shadow: 0 20px 50px -10px rgba(37, 99, 235, 0.3); 
-    z-index: 2;
-}
-
-.plan-badge { 
-    position: absolute; top: -15px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: white; 
-    padding: 6px 20px; border-radius: 20px; font-size: 13px; font-weight: 900; 
-}
-
-/* ⚡ باکس آیکون‌های جدید */
-.icon-container { 
-    width: 75px; height: 75px; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; transition: 0.3s; 
-}
-.icon-basic { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-.icon-pro { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }
-.icon-vip { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-
-.plan-name { font-size: 22px; font-weight: 900; margin-bottom: 10px; color: var(--text-main); }
-.plan-price { font-size: 32px; font-weight: 900; color: var(--primary); margin-bottom: 5px; }
-.plan-period { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; font-weight: bold; }
-.plan-features { list-style: none; padding: 0; margin: 0 0 30px 0; text-align: right; width: 100%; }
-.plan-features li { margin-bottom: 14px; font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 8px; font-weight: bold; }
-.plan-features li::before { content: '✅'; font-size: 14px; }
-.plan-features li.disabled { color: var(--text-muted); opacity: 0.5; font-weight: normal; }
-.plan-features li.disabled::before { content: '🔒'; filter: grayscale(100%); }
-</style>
-
-<style>
-.pricing-section { padding: 60px 20px; text-align: center; position: relative; z-index: 10; }
 .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1100px; margin: 40px auto; align-items: stretch; }
 
 /* 💎 کارت پایه با انیمیشن نرم */
@@ -561,8 +473,8 @@
 .plan-price { font-size: 32px; font-weight: 900; color: var(--primary); margin-bottom: 5px; }
 .plan-period { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; font-weight: bold; }
 
-.plan-features { list-style: none; padding: 0; margin: 0 0 30px 0; text-align: right; width: 100%; margin-top: auto; }
-.plan-features li { margin-bottom: 14px; font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 8px; font-weight: bold; }
+.plan-features { list-style: none; padding: 0; margin: 0 0 30px 0; text-align: center; width: 100%; margin-top: auto; }
+.plan-features li { margin-bottom: 14px; font-size: 14px; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; }
 .plan-features li::before { content: '✅'; font-size: 14px; color: #10b981; }
 .plan-features li.disabled { color: var(--text-muted); opacity: 0.5; font-weight: normal; }
 .plan-features li.disabled::before { content: '🔒'; filter: grayscale(100%); opacity: 0.5; }
@@ -580,6 +492,7 @@
     <p style="color: var(--text-muted); font-size: 16px;">امکاناتی که آژانس شما را متمایز می‌کند</p>
 
     <div class="pricing-grid">
+        
         <div class="plan-card">
             <div class="plan-icon" style="color: #64748b;">
                 <svg width="50" height="50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
@@ -588,12 +501,14 @@
             <div class="plan-price">۲۵۰,۰۰۰ <span style="font-size: 18px;">تومان</span></div>
             <div class="plan-period">ماهانه</div>
             <ul class="plan-features">
-                <li>ثبت و جستجوی فایل املاک</li>
-                <li>مدیریت مشاوران (تا ۳ نفر)</li>
-                <li>دسترسی به نقشه پایه نشان</li>
-                <li>نسخه PWA موبایل</li>
-                <li class="disabled">سیستم مدیریت مشتریان (CRM)</li>
-                <li class="disabled">تطابق هوشمند تقاضا</li>
+                <li>ثبت نامحدود فایل و تقاضا</li>
+                <li>مدیریت مشاوران و دسترسی‌ها</li>
+                <li>دفترچه یادداشت ابری (Cloud)</li>
+                <li>جستجوی پیشرفته متنی</li>
+                <li class="disabled">مکان‌یابی روی نقشه اختصاصی</li>
+                <li class="disabled">کاتالوگ‌ساز هوشمند مشتری</li>
+                <li class="disabled">تطابق هوشمند فایل و پیامک</li>
+                <li class="disabled">خروجی اکسل و داشبورد آمار</li>
             </ul>
             <button onclick="scrollToContact()" class="btn-modern btn-modern-outline" style="width: 100%;">شروع با پلن پایه</button>
         </div>
@@ -607,11 +522,13 @@
             <div class="plan-price">۴۵۰,۰۰۰ <span style="font-size: 18px;">تومان</span></div>
             <div class="plan-period">ماهانه</div>
             <ul class="plan-features">
-                <li>ثبت بی‌نهایت فایل</li>
-                <li><b>تطابق هوشمند و پیامک</b></li>
-                <li><b>سیستم مدیریت مشتریان (CRM)</b></li>
-                <li>داشبورد عملکرد آژانس</li>
-                <li>واترمارک اختصاصی عکس‌ها</li>
+                <li>ثبت نامحدود فایل و تقاضا</li>
+                <li>مدیریت مشاوران و یادداشت‌ها</li>
+                <li><b>مکان‌یابی روی نقشه اختصاصی</b></li>
+                <li><b>کاتالوگ‌ساز تکی و گروهی</b></li>
+                <li><b>تطابق هوشمند فایل و پیامک</b></li>
+                <li><b>خروجی اکسل و بکاپ اطلاعات</b></li>
+                <li class="disabled">داشبورد پیشرفته آمار مدیران</li>
             </ul>
             <button onclick="scrollToContact()" class="btn-modern" style="width: 100%; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);">انتخاب پلن حرفه‌ای</button>
         </div>
@@ -624,11 +541,12 @@
             <div class="plan-price">۹۵۰,۰۰۰ <span style="font-size: 18px;">تومان</span></div>
             <div class="plan-period">ماهانه</div>
             <ul class="plan-features">
-                <li><b>مدیریت مشاوران نامحدود</b></li>
-                <li><b>دامنه اختصاصی آژانس</b></li>
-                <li>برندینگ پیشرفته و اختصاصی</li>
-                <li>خروجی اکسل و فایلینگ</li>
-                <li>پشتیبانی اختصاصی ۲۴ ساعته</li>
+                <li><b>تمامی امکانات پلن حرفه‌ای</b></li>
+                <li><b>داشبورد پیشرفته آمار و عملکرد</b></li>
+                <li><b>نمودارهای تحلیلی فعالیت آژانس</b></li>
+                <li>اولویت در پشتیبانی اختصاصی</li>
+                <li>دسترسی زودهنگام به آپدیت‌ها</li>
+                <li><b>پنل کاملاً آزاد و بدون محدودیت</b></li>
             </ul>
             <button onclick="scrollToContact()" class="btn-modern btn-modern-outline" style="width: 100%;">دریافت لایسنس VIP</button>
         </div>
@@ -637,19 +555,19 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.j-scroll-card');
+        const cards = document.querySelectorAll('.plan-card'); // کلاس جاوااسکریپت رو با کارت‌ها هماهنگ کردم
         
         const observerOptions = {
             root: null,
-            threshold: 0.25, // وقتی 25% کارت دیده شد، انیمیشن شروع شود
-            rootMargin: '0px 0px -50px 0px' // یکم زودتر از رسیدن به لبۀ پایین شروع شود
+            threshold: 0.25,
+            rootMargin: '0px 0px -50px 0px'
         };
 
         const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('is-visible');
-                    observer.unobserve(entry.target); // فقط یک‌بار انیمیشن اجرا شود
+                    observer.unobserve(entry.target);
                 }
             });
         }, observerOptions);
@@ -667,9 +585,239 @@
                 <a href="tel:09193323537" class="phone-number" dir="ltr" style="text-decoration: none;">0919-332-3537</a>
             </div>
         </section>
-        <footer style="text-align: center; padding: 40px; background: #020617; color: #64748b; font-size: 16px;">
-            <p style="margin: 0; line-height: 2;">طراحی و توسعه با ❤️ توسط <br/><b style="color: #3b82f6; font-size: 20px;">شایان عموزاده</b></p>
-        </footer>
+        <footer class="modern-footer" dir="rtl">
+    <div class="footer-container">
+        <div class="footer-grid">
+            
+            <div class="footer-col brand-col">
+                <h3 class="footer-brand">سیستم یکپارچه <span>املاک من</span></h3>
+                <p class="footer-desc">
+                    ما به آژانس‌های املاک کمک می‌کنیم تا با استفاده از جدیدترین تکنولوژی‌های ابری و هوش مصنوعی، فایل‌ها و مشتریان خود را به سریع‌ترین و امن‌ترین شکل ممکن مدیریت کنند.
+                </p>
+                <div class="social-links">
+                    <a href="#" title="اینستاگرام" class="social-icon">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    </a>
+                    <a href="#" title="تلگرام" class="social-icon">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.686c.223-.195-.054-.285-.346-.096l-6.405 4.03-2.76-.86c-.6-.188-.61-.6.125-.89l10.796-4.162c.5-.188.948.11.77.429z"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">ارتباط با پشتیبانی</h4>
+                <ul class="footer-contact">
+                    <li>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.896-1.466-5.309-3.879-6.775-6.775l1.293-.97c.362-.271.527-.733.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path></svg>
+                        <span>09193323537</span>
+                    </li>
+                    <li>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"></path></svg>
+                        <span>shayanamz.7687@gmail.com</span>
+                    </li>
+                    <li style="align-items: flex-start;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-top: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"></path></svg>
+                        <span style="line-height: 1.6;">سمنان ، مابین میدان نماز و جمهوری ساختمان استیل البرز طبقه سوم</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!--<div class="footer-col">
+                <h4 class="footer-title">نمادهای اعتماد</h4>
+                <div class="trust-badges">
+                    <div class="badge-placeholder">اینماد</div>
+                    <div class="badge-placeholder">ساماندهی</div>
+                </div>
+            </div>-->
+
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>تمامی حقوق مادی و معنوی این پلتفرم متعلق به <strong>شایان عموزاده</strong> می‌باشد. © ۲۰۲۶</p>
+    </div>
+</footer>
+
+<style>
+    .modern-footer {
+        background-color: #0f172a; 
+        color: #e2e8f0;
+        font-family: 'Vazirmatn', Tahoma, sans-serif;
+        position: relative;
+        overflow: hidden;
+        margin-top: 0; /* ⬅️ این مقدار صفر شد تا نوار سفید برای همیشه حذف بشه */
+        border-top: 4px solid #2563eb; 
+    }
+
+    .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 80px 20px 40px; /* ⬅️ فاصله داخلی از بالا رو بیشتر کردیم تا فضای تنفس داشته باشه */
+    }
+
+    .footer-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr; /* ⬅️ چون فعلاً ۲ ستون داری، این حالت تعادل رو حفظ می‌کنه */
+        gap: 120px; /* ⬅️ فاصله بین متن معرفی و اطلاعات تماس رو حسابی زیاد کردیم */
+    }
+
+    .footer-brand {
+        font-size: 24px;
+        font-weight: 900;
+        color: #ffffff;
+        margin-bottom: 15px;
+    }
+
+    .footer-brand span {
+        color: #3b82f6; /* هایلایت اسم برند */
+    }
+
+    .footer-desc {
+        font-size: 14px;
+        line-height: 1.8;
+        color: #94a3b8;
+        margin-bottom: 25px;
+    }
+
+    .social-links {
+        display: flex;
+        gap: 12px;
+    }
+
+    .social-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: #1e293b;
+        color: #94a3b8;
+        border-radius: 10px;
+        transition: 0.3s ease;
+    }
+
+    .social-icon:hover {
+        background-color: #3b82f6;
+        color: #ffffff;
+        transform: translateY(-3px);
+    }
+
+    .footer-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 20px;
+        position: relative;
+        padding-bottom: 10px;
+    }
+
+    /* خط کوچک زیر تیترها */
+    .footer-title::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 30px;
+        height: 2px;
+        background-color: #3b82f6;
+        border-radius: 2px;
+    }
+
+    .footer-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer-links li {
+        margin-bottom: 12px;
+    }
+
+    .footer-links a {
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.2s ease;
+        display: inline-block;
+    }
+
+    .footer-links a:hover {
+        color: #3b82f6;
+        transform: translateX(-5px); /* حرکت نرم به سمت چپ (در راست‌چین) */
+    }
+
+    .footer-contact {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer-contact li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #94a3b8;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .footer-contact svg {
+        color: #3b82f6;
+        flex-shrink: 0;
+    }
+
+    .trust-badges {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    /* باکس موقت برای نمادها تا زمانی که عکس اصلی رو بذاری */
+    .badge-placeholder {
+        width: 80px;
+        height: 80px;
+        background-color: #1e293b;
+        border: 1px dashed #475569;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #64748b;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+    .badge-placeholder:hover {
+        border-color: #3b82f6;
+        color: #94a3b8;
+    }
+
+    .footer-bottom {
+        border-top: 1px solid #1e293b;
+        text-align: center;
+        padding: 20px;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .footer-bottom strong {
+        color: #94a3b8;
+    }
+
+    /* ریسپانسیو برای موبایل و تبلت */
+    @media (max-width: 992px) {
+        .footer-grid { grid-template-columns: 1fr 1fr; }
+        .brand-col { grid-column: span 2; }
+    }
+
+    @media (max-width: 576px) {
+        .footer-grid { grid-template-columns: 1fr; gap: 30px; }
+        .brand-col { grid-column: span 1; }
+        .footer-container { padding: 40px 20px 20px; }
+    }
+</style>
     </div>
 
     <!-- ⚡ فرم‌های ورود -->
@@ -735,7 +883,8 @@
                 <div class="header-actions">
     <!-- دکمه تغییر رمز مخفی شد تا جاوااسکریپت ارور نده -->
     <span id="btn-change-pass" style="display: none !important;"></span>
-    
+
+    <button onclick="window.openNotesModal()" class="icon-btn" id="btn-personal-notes" title="یادداشت‌های شخصی">📝</button>              
     <button onclick="exportToCSV()" class="icon-btn" id="btn-export-csv" title="دانلود فایل اکسل">📥</button>
     <button onclick="toggleDarkMode()" class="icon-btn" id="theme-toggle" title="تغییر پوسته">🌙</button>
     <button onclick="logout()" class="icon-btn hidden" id="btn-guest-logout" title="خروج از سیستم">🚪</button>
@@ -1073,12 +1222,30 @@
                 <!-- تب لیست تقاضاها (جدا شده) -->
                 <div id="demands-view" class="fade-in hidden block">
                     <div class="tools-card" style="margin-bottom: 16px;">
-                        <h2 style="font-size: 16px; font-weight: bold; margin:0 0 16px 0; display:flex; align-items:center; gap:6px; color:var(--text-main);"><span>📝</span> لیست تقاضاهای ثبت شده</h2>
-                        
-                        <div class="input-wrapper" style="width: 100%; margin-bottom: 0;">
-                            <span class="input-icon">🔍</span>
-                            <input type="text" id="search-demand-input" style="margin-bottom: 0;" oninput="window.currentPage.demands = 1; renderDemands()" placeholder="جستجو سریع (نام مشتری، تلفن، محله، کاربری، توضیحات...)" />
-                        </div>
+                        <h2 style="font-size: 16px; font-weight: bold; margin:0 0 16px 0; display:flex; align-items:center; gap:6px; color:var(--text-main);"><span>📝</span> لیست تقاضاهای ثبت شده</h2>        
+                        <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+    
+    <input type="text" id="search-demand-input" placeholder="جستجوی نام، شهر، توضیحات..." oninput="window.renderDemands()" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+    
+    <select id="sort-demand-select" onchange="window.renderDemands()" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+        <option value="date-desc">⏳ جدیدترین‌ها</option>
+        <option value="date-asc">⌛ قدیمی‌ترین‌ها</option>
+        <option value="budget-desc">💰 بیشترین بودجه</option>
+        <option value="budget-asc">🪙 کمترین بودجه</option>
+        <option value="area-desc">📏 بیشترین متراژ</option>
+        <option value="area-asc">📐 کمترین متراژ</option>
+    </select>
+
+    <input type="tel" id="min-area-demand" placeholder="حداقل متراژ" oninput="this.value = this.value.replace(/\D/g, ''); window.renderDemands();" style="width: 110px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+    
+    <input type="tel" id="max-area-demand" placeholder="حداکثر متراژ" oninput="this.value = this.value.replace(/\D/g, ''); window.renderDemands();" style="width: 110px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+    
+    <input type="tel" id="min-budget-demand" placeholder="حداقل بودجه/رهن" oninput="let v = this.value.replace(/\D/g, ''); this.value = v ? Number(v).toLocaleString('en-US') : ''; window.renderDemands();" style="width: 140px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+    
+    <input type="tel" id="max-budget-demand" placeholder="حداکثر بودجه" oninput="let v = this.value.replace(/\D/g, ''); this.value = v ? Number(v).toLocaleString('en-US') : ''; window.renderDemands();" style="width: 140px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+    
+    <button onclick="window.clearDemandInlineFilters()" style="background: #ffffff; border: 1px solid #ef4444; color: #ef4444; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px; font-family: inherit; margin-right: auto;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">حذف تمام فیلترها 🧹</button>
+</div>
                     </div>
                     <div id="demands-container"></div>
                     
@@ -1221,6 +1388,60 @@
         </div>
     </div>
     <div id="sell-modal" class="modal-overlay hidden"><div class="modal-box fade-in"><h3 class="modal-title" style="color:#10b981;">🤝 ثبت قرارداد واگذاری</h3><div class="form-group"><label>نام مشاور انجام‌دهنده معامله:</label><select id="sell-consultant-select"></select></div><div style="display:flex;flex-direction:column;gap:12px;margin-top:20px;"><button id="btn-confirm-sell" onclick="confirmSell()" class="btn-modern btn-modern-success">✅ ثبت واگذاری ملک</button><button onclick="closeSellModal()" class="btn-modern btn-modern-outline" style="font-size:14px; font-weight:bold;">بازگشت و انصراف</button></div></div></div>
+  <div id="notes-modal" class="modal-overlay hidden" style="z-index: 105;">
+        <div class="modal-box fade-in" style="width: 90%; max-width: 500px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-size: 16px; color: var(--text-main);">📝 دفترچه یادداشت شخصی من</h3>
+                <button onclick="document.getElementById('notes-modal').classList.add('hidden')" style="background: #fee2e2; color: #ef4444; border: none; font-size: 18px; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">✖</button>
+            </div>
+            <textarea id="personal-notes-textarea" rows="10" placeholder="یادداشت‌های روزانه، شماره‌های مهم یا پیگیری‌های خود را اینجا بنویسید...&#10;(این یادداشت‌ها در دیتابیس همگام‌سازی می‌شوند)" style="width: 100%; resize: none; overflow-y: auto; padding: 12px; border-radius: 12px; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); font-family: 'Vazirmatn', Tahoma, sans-serif; font-size: 14px; line-height: 1.8;"></textarea>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                <button onclick="window.savePersonalNotes()" class="btn-modern btn-modern-success" style="width: auto; box-shadow: none;">✅ ذخیره یادداشت</button>
+            </div>
+        </div>
+    </div>
+  <div id="demand-filter-modal" class="modal-overlay hidden" style="z-index: 105;">
+        <div class="modal-box fade-in" style="width: 90%; max-width: 400px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-size: 16px; color: var(--text-main);">🔍 فیلتر تقاضای مشتریان</h3>
+                <button onclick="document.getElementById('demand-filter-modal').classList.add('hidden')" style="background: #fee2e2; color: #ef4444; border: none; font-size: 18px; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; transition: 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">✖</button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">مرتب‌سازی بر اساس:</label>
+                    <select id="df-sort" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+                        <option value="date-desc">⏳ جدیدترین تقاضاها</option>
+                        <option value="date-asc">⌛ قدیمی‌ترین تقاضاها</option>
+                        <option value="budget-desc">💰 بیشترین بودجه / رهن</option>
+                        <option value="budget-asc">🪙 کمترین بودجه / رهن</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">بازه متراژ (متر):</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="df-min-area" placeholder="از..." style="width: 50%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+                        <input type="number" id="df-max-area" placeholder="تا..." style="width: 50%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">بازه بودجه / رهن (تومان):</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="df-min-budget" placeholder="از مبلغ..." style="width: 50%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+                        <input type="number" id="df-max-budget" placeholder="تا مبلغ..." style="width: 50%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-family: inherit;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 25px;">
+                <button onclick="window.clearDemandFilters()" style="background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer; font-family: inherit;">حذف فیلترها 🗑️</button>
+                <button onclick="window.applyDemandFilters()" class="btn-modern btn-modern-success" style="width: auto; padding: 10px 25px;">اعمال فیلتر 🔍</button>
+            </div>
+        </div>
+    </div>
     <!-- ⚡ پاپ‌آپ نمایش جزئیات کامل در حالت فشرده -->
     <div id="property-detail-modal" class="modal-overlay hidden" onclick="closePropertyModal()" style="z-index: 95;">
         <div class="modal-box fade-in" style="max-width: 600px; padding: 0; overflow: hidden; background: var(--bg-body);" onclick="event.stopPropagation()">
@@ -1600,6 +1821,7 @@
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match];
             });
         };
+
         window.changePage = function(type, dir) { window.currentPage[type] += dir; window.scrollTo({ top: 0, behavior: 'smooth' }); if (type === 'properties') window.renderProperties(); if (type === 'guestAll') window.renderGuestAllProperties(); if (type === 'guestAgency') window.renderGuestProperties(); if (type === 'demands') window.renderDemands(); };
         window.viewMatchedProperty = function(id) { window.highlightedId = id; document.getElementById('search-input').value = ''; document.getElementById('filter-usage').value = 'همه'; document.getElementById('filter-deal-type').value = 'همه'; document.getElementById('filter-status').value = 'موجود'; window.switchTab('list'); setTimeout(() => { const card = document.getElementById('card-' + id); if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.style.transition = '0.5s'; card.style.transform = 'scale(1.02)'; card.style.boxShadow = '0 0 30px 10px rgba(16, 185, 129, 0.4)'; setTimeout(() => { card.style.transform = 'scale(1)'; card.style.boxShadow = card.classList.contains('vip-card') ? '0 4px 12px rgba(251, 191, 36, 0.15)' : '0 2px 8px rgba(0,0,0,0.04)'; window.highlightedId = null; }, 3000); } }, 300); };
         
@@ -1823,12 +2045,12 @@
             if (syncInterval) clearInterval(syncInterval); 
             syncInterval = setInterval(fetchAllData, 15000); // ⚡ سینک هر ۱۵ ثانیه
             
-            if (pingInterval) clearInterval(pingInterval);
-            pingInterval = setInterval(() => {
-                if (userProfile && (userProfile.role === 'مشاور' || userProfile.role === 'مدیر')) {
-                    apiCall('ping').catch(()=>{});
-                }
-            }, 20000); // ⚡ اعلام حضور هر ۲۰ ثانیه
+            //if (pingInterval) clearInterval(pingInterval);
+            //pingInterval = setInterval(() => {
+                //if (userProfile && (userProfile.role === 'مشاور' || userProfile.role === 'مدیر')) {
+                    //apiCall('ping').catch(()=>{});
+                //}
+            //}, 20000); // ⚡ اعلام حضور هر ۲۰ ثانیه
         }
         document.addEventListener("visibilitychange", () => { if (document.hidden) { if (syncInterval) clearInterval(syncInterval); } else { if (userProfile) { fetchAllData(); syncInterval = setInterval(fetchAllData, 15000); } } });
 
@@ -1863,12 +2085,14 @@
                 let finalName = uName; 
                 let sessionToken = ''; 
                 let agencyName = '';
+                let agencyPlan = 'Basic'; // ⚡ متغیر پلن اضافه شد
                 
                 if (isManager) {
                     const loginRes = await apiCall('loginManager', { pin: pin, agencyId: aCode }, aCode);
                     sessionToken = loginRes.token; 
                     finalName = loginRes.managerName || 'مدیر آژانس'; 
                     agencyName = loginRes.agencyName;
+                    agencyPlan = loginRes.plan || 'Basic'; // ⚡ خواندن پلن از سرور
                 } else {
                     const loginRes = await apiCall('loginConsultant', { name: finalName, pin: pin, agencyId: aCode }, aCode);
                     if (loginRes.status === 'pending_sent') { 
@@ -1879,9 +2103,11 @@
                     }
                     sessionToken = loginRes.token; 
                     agencyName = loginRes.agencyName;
+                    agencyPlan = loginRes.plan || 'Basic'; // ⚡ خواندن پلن از سرور
                 }
                 
-                userProfile = { name: finalName, role: isManager ? 'مدیر' : 'مشاور', agencyId: aCode, agencyName: agencyName, token: sessionToken };
+                // ⚡ پلن در توکن لوکال ذخیره میشه
+                userProfile = { name: finalName, role: isManager ? 'مدیر' : 'مشاور', agencyId: aCode, agencyName: agencyName, token: sessionToken, plan: agencyPlan };
                 localStorage.setItem('amlakProfile', JSON.stringify(userProfile)); 
                 window.showToast(`خوش آمدید`);
                 document.getElementById('auth-view').classList.add('hidden'); 
@@ -1890,19 +2116,7 @@
                 startListeningToData();
                 
             } catch (err) {
-                window.showToast("خطا: " + (err.message || "سرور متصل نیست! آفلاین وارد می‌شوید..."));
-                if (!err.message || err.message === 'Failed to fetch') {
-                    const cached = localStorage.getItem('amlakDataCache');
-                    if (cached) {
-                        let finalName = isManager ? 'مدیر (آفلاین)' : uName;
-                        userProfile = { name: finalName, role: isManager ? 'مدیر' : 'مشاور', agencyId: aCode, agencyName: "حالت آفلاین", token: 'offline' };
-                        localStorage.setItem('amlakProfile', JSON.stringify(userProfile));
-                        document.getElementById('auth-view').classList.add('hidden'); 
-                        document.getElementById('main-app').classList.remove('hidden');
-                        setupAppUI(); 
-                        startListeningToData();
-                    }
-                }
+                window.showToast("خطا: " + (err.message || "سرور متصل نیست!"));
             } finally { 
                 document.getElementById(btnId).disabled = false; 
                 document.getElementById('auth-loading').classList.add('hidden'); 
@@ -2236,26 +2450,48 @@
 
         window.renderProperties = function() { 
             const container = document.getElementById('properties-container'); const countLabel = document.getElementById('property-count');
-            const s = window.normalizeText(document.getElementById('search-input').value.trim()); 
+            if (!container) return; // سوپاپ اطمینان برای جلوگیری از ارور
+
+            const searchInput = document.getElementById('search-input');
+            const s = searchInput ? window.normalizeText(searchInput.value.trim()) : ''; 
             
-            // ⚡ اصلاح مهم: اضافه شدن replace برای حذف کاماها قبل از جستجو
+            // 🛡️ ۱. بازیابی سریع پروفایل از حافظه
+            let up = window.userProfile;
+            if (!up) { 
+                try { up = JSON.parse(localStorage.getItem('amlakProfile')); window.userProfile = up; } catch(e){} 
+            }
+            
+            // 🛡️ استفاده از ?. برای فیلترها تا اگر المانی در پنل مهمان نبود، سیستم کِرَش نکند
             const f = { 
-                u: document.getElementById('filter-usage').value, d: document.getElementById('filter-deal-type').value, 
-                min: document.getElementById('filter-min-price').value.replace(/,/g, ''), 
-                max: document.getElementById('filter-max-price').value.replace(/,/g, ''), 
-                minRent: document.getElementById('filter-min-rent').value.replace(/,/g, ''), 
-                maxRent: document.getElementById('filter-max-rent').value.replace(/,/g, ''), 
-                minA: document.getElementById('filter-min-area') ? document.getElementById('filter-min-area').value : '',
-                maxA: document.getElementById('filter-max-area') ? document.getElementById('filter-max-area').value : '',
-                sort: document.getElementById('sort-by').value, ex: document.getElementById('filter-exchange').checked, pa: document.getElementById('filter-partner').checked, ps: document.getElementById('filter-presale').checked, st: document.getElementById('filter-status').value
+                u: document.getElementById('filter-usage')?.value || 'همه', 
+                d: document.getElementById('filter-deal-type')?.value || 'همه', 
+                min: (document.getElementById('filter-min-price')?.value || '').replace(/,/g, ''), 
+                max: (document.getElementById('filter-max-price')?.value || '').replace(/,/g, ''), 
+                minRent: (document.getElementById('filter-min-rent')?.value || '').replace(/,/g, ''), 
+                maxRent: (document.getElementById('filter-max-rent')?.value || '').replace(/,/g, ''), 
+                minA: document.getElementById('filter-min-area')?.value || '',
+                maxA: document.getElementById('filter-max-area')?.value || '',
+                sort: document.getElementById('sort-by')?.value || 'default', 
+                ex: document.getElementById('filter-exchange')?.checked || false, 
+                pa: document.getElementById('filter-partner')?.checked || false, 
+                ps: document.getElementById('filter-presale')?.checked || false, 
+                st: document.getElementById('filter-status')?.value || 'همه'
             }; 
             
             const filterHash = s + JSON.stringify(f);
             if (window.lastFilters && window.lastFilters.properties !== filterHash) { window.currentPage.properties = 1; window.lastFilters.properties = filterHash; }
             else if (!window.lastFilters) window.lastFilters = { properties: filterHash };
 
-            let res = [...properties].filter(p => { 
-                if (s && ![p.city, p.location, p.exactAddress, p.referrer, p.phone, p.phone2, p.description, p.internalNote, p.authorName, p.usage, p.dealType, p.rooms, p.yearBuilt].some(v => window.normalizeText(v).includes(s))) return false; 
+            // اطمینان از تعریف درست آرایه داده‌ها
+            const propsArray = Array.isArray(properties) ? properties : [];
+
+            let res = [...propsArray].filter(p => { 
+                // 🛡️ ۲. مهمان‌ها تحت هیچ شرایطی نباید فایل‌های واگذار شده یا مخفی رو ببینن
+                if (up && up.role === 'مهمان' && p.status !== 'موجود') return false;
+
+                // بررسی امن متون جستجو شده
+                if (s && ![p.city, p.location, p.exactAddress, p.referrer, p.phone, p.phone2, p.description, p.internalNote, p.authorName, p.usage, p.dealType, p.rooms, p.yearBuilt].some(v => window.normalizeText(v || '').includes(s))) return false; 
+                
                 if (f.u !== 'همه' && p.usage !== f.u) return false; 
                 if (f.d !== 'همه' && p.dealType !== f.d) return false; 
                 if (f.st !== 'همه' && (p.status || 'موجود') !== f.st) return false; 
@@ -2274,7 +2510,6 @@
                     if (f.maxRent && r > Number(f.maxRent)) return false;
                 }
                 
-                // ⚡ فیلتر هوشمند متراژ
                 if (f.minA && p.area < Number(f.minA)) return false;
                 if (f.maxA && p.area > Number(f.maxA)) return false;
 
@@ -2286,25 +2521,47 @@
                 switch (f.sort) { case 'regDate': const tA = parseInt(a.id.replace('prop_', '')) || (a.date ? new Date(a.date).getTime() : 0); const tB = parseInt(b.id.replace('prop_', '')) || (b.date ? new Date(b.date).getTime() : 0); return tB - tA; case 'priceAsc': return pA - pB; case 'priceDesc': return pB - pA; case 'areaAsc': return a.area - b.area; case 'areaDesc': return b.area - a.area; default: return new Date(b.date).getTime() - new Date(a.date).getTime(); }
             }); 
             
-            // ⚡ ذخیره فایل‌های فیلتر شده برای کاتالوگ گروهی
             window.lastFilteredProperties = res;
-            countLabel.innerText = f.st === 'واگذار شده' ? `${res.length} واگذار شده` : `${res.filter(p => (p.status || 'موجود') === 'موجود').length} موجود`; 
+            if (countLabel) {
+                countLabel.innerText = f.st === 'واگذار شده' ? `${res.length} واگذار شده` : `${res.filter(p => (p.status || 'موجود') === 'موجود').length} موجود`; 
+            }
             const pagEl = document.getElementById('pagination-properties');
 
-            if (res.length === 0) { container.innerHTML = `<div class="empty-state pop-in"><span>🏚️</span><p style="font-weight:bold; font-size:18px;">موردی یافت نشد.</p></div>`; pagEl.classList.add('hidden'); return; } 
+            if (res.length === 0) { 
+                container.innerHTML = `<div class="empty-state pop-in"><span>🏚️</span><p style="font-weight:bold; font-size:18px;">موردی یافت نشد.</p></div>`; 
+                if (pagEl) pagEl.classList.add('hidden'); 
+                return; 
+            } 
             
             const totalPages = Math.ceil(res.length / ITEMS_PER_PAGE) || 1;
             if (window.currentPage.properties > totalPages) window.currentPage.properties = totalPages;
             const start = (window.currentPage.properties - 1) * ITEMS_PER_PAGE;
             
             let htmlStr = ''; 
-            res.slice(start, start + ITEMS_PER_PAGE).forEach(prop => { htmlStr += generateCardHtml(prop, 'agency'); }); 
+            
+            // 🛡️ ۳. تفکیک حالت نمایش (مهمان کلمه 'guest' را می‌فرستد تا یادداشت داخلی لود نشود)
+            const viewMode = (up && up.role === 'مهمان') ? 'guest' : 'agency';
+
+            res.slice(start, start + ITEMS_PER_PAGE).forEach(prop => { htmlStr += generateCardHtml(prop, viewMode); }); 
             container.innerHTML = htmlStr; 
 
-            if (totalPages > 1) {
-                pagEl.classList.remove('hidden'); document.getElementById('page-info-properties').innerText = `صفحه ${window.currentPage.properties} از ${totalPages}`;
-                document.getElementById('btn-prev-properties').disabled = window.currentPage.properties === 1; document.getElementById('btn-next-properties').disabled = window.currentPage.properties === totalPages;
-            } else { pagEl.classList.add('hidden'); }
+            if (pagEl) {
+                if (totalPages > 1) {
+                    pagEl.classList.remove('hidden'); document.getElementById('page-info-properties').innerText = `صفحه ${window.currentPage.properties} از ${totalPages}`;
+                    document.getElementById('btn-prev-properties').disabled = window.currentPage.properties === 1; document.getElementById('btn-next-properties').disabled = window.currentPage.properties === totalPages;
+                } else { pagEl.classList.add('hidden'); }
+            }
+
+            // 🛡️ ۴. مخفی کردن فوری دکمه‌های اضافه بعد از رفرش برای کاربر مهمان
+            if (up && up.role === 'مهمان') {
+                setTimeout(() => {
+                    document.querySelectorAll('[onclick*="openPropertyModal"], [onclick*="openDemandModal"], [onclick*="showDashboard"], [onclick*="openPanel"], [onclick*="Dashboard"]').forEach(el => el.style.display = 'none');
+                    const tabDemands = document.getElementById('tab-btn-demands') || document.querySelector('[onclick*="demands"]');
+                    const tabMembers = document.getElementById('tab-btn-members') || document.querySelector('[onclick*="members"]');
+                    if (tabDemands) tabDemands.style.display = 'none';
+                    if (tabMembers) tabMembers.style.display = 'none';
+                }, 50);
+            }
         };
 
         // ⚡ مدیریت نمایش فیلتر اجاره در بخش مهمان
@@ -2446,10 +2703,32 @@
             // ⚡ اعمال موتور جستجوی قدرتمند تقاضاها
             const searchInput = document.getElementById('search-demand-input');
             const s = searchInput ? window.normalizeText(searchInput.value.trim()) : '';
+          
 
+            // ⚡ ۱. خواندن مقادیر مستقیماً از روی صفحه (با حذف هوشمندانه ویرگول‌ها)
+            const sortVal = document.getElementById('sort-demand-select') ? document.getElementById('sort-demand-select').value : 'date-desc';
+            
+            // جایگزینی ویرگول‌ها با هیچی، تا عدد خالص به دست بیاد
+            const minA = Number(document.getElementById('min-area-demand')?.value.replace(/,/g, '')) || 0;
+            const maxA = Number(document.getElementById('max-area-demand')?.value.replace(/,/g, '')) || 0;
+            const minB = Number(document.getElementById('min-budget-demand')?.value.replace(/,/g, '')) || 0;
+            const maxB = Number(document.getElementById('max-budget-demand')?.value.replace(/,/g, '')) || 0;
+
+            // ⚡ ۲. فیلتر کردن آنی لیست تقاضاها
             const filteredDemands = demands.filter(d => {
+                // الف) جستجوی متنی
                 if (s && ![d.clientName, d.clientPhone, d.clientPhone2, d.city, d.desc, d.usage, d.dealType].some(v => window.normalizeText(v).includes(s))) return false;
-                return true;
+                
+                // ب) فیلتر متراژ و قیمت
+                let area = Number(d.area) || 0;
+                let budget = Number(d.budget) || Number(d.deposit) || 0; 
+
+                if (minA > 0 && area < minA) return false;
+                if (maxA > 0 && area > maxA) return false;
+                if (minB > 0 && budget < minB) return false;
+                if (maxB > 0 && budget > maxB) return false;
+                
+                return true; 
             });
 
             if(filteredDemands.length === 0) { 
@@ -2458,13 +2737,41 @@
                 return; 
             }
 
-            const sortedDemands = filteredDemands.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            // ⚡ ۳. مرتب‌سازی پیشرفته
+            const sortedDemands = filteredDemands.sort((a,b) => {
+                let budgetA = Number(a.budget) || Number(a.deposit) || 0;
+                let budgetB = Number(b.budget) || Number(b.deposit) || 0;
+                let areaA = Number(a.area) || 0;
+                let areaB = Number(b.area) || 0;
+                let dateA = new Date(a.date || 0).getTime();
+                let dateB = new Date(b.date || 0).getTime();
+
+                if (sortVal === 'date-desc') return dateB - dateA;
+                if (sortVal === 'date-asc') return dateA - dateB;
+                if (sortVal === 'budget-desc') return budgetB - budgetA;
+                if (sortVal === 'budget-asc') return budgetA - budgetB;
+                if (sortVal === 'area-desc') return areaB - areaA;
+                if (sortVal === 'area-asc') return areaA - areaB;
+                return 0;
+            });
+
             const totalPages = Math.ceil(sortedDemands.length / ITEMS_PER_PAGE) || 1;
             if (window.currentPage.demands > totalPages) window.currentPage.demands = totalPages;
             const start = (window.currentPage.demands - 1) * ITEMS_PER_PAGE;
 
             let htmlStr = ''; 
             sortedDemands.slice(start, start + ITEMS_PER_PAGE).forEach(d => { 
+                // ⚡ تبدیل هوشمند تاریخ ثبت میلادی به شمسی
+                let regDateShamsi = '---';
+                if (d.date) {
+                    try {
+                        const dParts = new Intl.DateTimeFormat('fa-IR-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(d.date));
+                        regDateShamsi = `${dParts.find(p=>p.type==='year').value}/${dParts.find(p=>p.type==='month').value.padStart(2,'0')}/${dParts.find(p=>p.type==='day').value.padStart(2,'0')}`;
+                    } catch(e) {
+                        console.error("Error formatting date:", e);
+                    }
+                }
+
                 // ⚡ موتور جدید تطبیق هوشمند (با تفکیک رهن و اجاره)
                 let matches = properties.filter(p => { 
                     if (p.status !== 'موجود') return false; 
@@ -2478,32 +2785,36 @@
                     // بررسی متراژ (با تولرانس ۱۵ درصد)
                     if (p.area < d.area * 0.85 || p.area > d.area * 1.15) return false; 
 
-                    // ⚡ بررسی هوشمند بودجه بر اساس نوع واگذاری
+                    // بررسی هوشمند بودجه بر اساس نوع واگذاری
                     if (d.dealType === 'فروش' && d.budget > 0) {
                         if (p.price > d.budget * 1.10) return false;
                     } else if (d.dealType === 'رهن کامل' && d.deposit > 0) {
                         if (p.deposit > d.deposit * 1.10) return false;
                     } else if (d.dealType === 'رهن و اجاره') {
-                        // در رهن و اجاره، هم رهن چک می‌شود و هم اجاره
                         if (d.deposit > 0 && p.deposit > d.deposit * 1.10) return false;
                         if (d.rent > 0 && p.rent > d.rent * 1.10) return false;
                     }
                     
                     return true; 
                 });
+                
                 let matchBadge = '', matchDetails = ''; 
                 if (matches.length > 0) { 
                     matchBadge = `<span style="background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight:900; margin-right: auto; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);" onclick="document.getElementById('matches-${d.id}').classList.toggle('hidden')">🎯 ${matches.length} فایل مشابه</span>`;
-                    let matchItems = matches.map(m => { let smsText = `سلام ${d.clientName} عزیز،\nیک فایل ${m.usage} ${m.dealType} حدود ${m.area} متر در محدوده ${m.location || m.city} پیدا شد.\n🏢 ${userProfile.agencyName}`; let smsBtn = d.clientPhone ? `<a href="sms:${d.clientPhone}?body=${encodeURIComponent(smsText)}" style="background: #10b981; border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight:900; text-decoration: none; box-shadow: 0 2px 5px rgba(16,185,129,0.3); display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;">💬 پیامک</a>` : ''; 
-return `<div style="background: var(--bg-body); padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;">
-    <span>✅ <b>${m.area} متری در ${m.location || m.city}</b></span>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button onclick="viewMatchedProperty('${m.id}')" style="background: var(--bg-card); border: 2px solid #3b82f6; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight:900; cursor:pointer; white-space: nowrap;">مشاهده</button>
-        ${smsBtn}
-    </div>
-</div>`; }).join(''); 
+                    let matchItems = matches.map(m => { 
+                        let smsText = `سلام ${d.clientName} عزیز،\nیک فایل ${m.usage} ${m.dealType} حدود ${m.area} متر در محدوده ${m.location || m.city} پیدا شد.\n🏢 ${userProfile.agencyName}`; 
+                        let smsBtn = d.clientPhone ? `<a href="sms:${d.clientPhone}?body=${encodeURIComponent(smsText)}" style="background: #10b981; border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight:900; text-decoration: none; box-shadow: 0 2px 5px rgba(16,185,129,0.3); display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;">💬 پیامک</a>` : ''; 
+                        return `<div style="background: var(--bg-body); padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-top: 12px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;">
+                            <span>✅ <b>${m.area} متری در ${m.location || m.city}</b></span>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button onclick="viewMatchedProperty('${m.id}')" style="background: var(--bg-card); border: 2px solid #3b82f6; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight:900; cursor:pointer; white-space: nowrap;">مشاهده</button>
+                                ${smsBtn}
+                            </div>
+                        </div>`; 
+                    }).join(''); 
                     matchDetails = `<div id="matches-${d.id}" class="hidden fade-in" style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed var(--border);">${matchItems}</div>`; 
                 } 
+                
                 let followUpHtml = ''; 
                 if (d.followUpDate) { 
                     const followDateLatin = d.followUpDate.replace(/[۰-۹]/g, w => String.fromCharCode(w.charCodeAt(0) - 1728)); 
@@ -2516,13 +2827,12 @@ return `<div style="background: var(--bg-body); padding: 12px; border-radius: 12
                 
                 let callButtons = ''; 
                 if (d.clientPhone && !d.clientPhone2) {
-                    callButtons += `<a href="tel:${d.clientPhone}" class="call-btn" style="background:#10b981; text-decoration:none; color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(16,185,129,0.3); transition:0.2s;">📞 تماس با مشتری</a>`; 
+                    callButtons += `<a href="tel:${d.clientPhone}" class="call-btn" style="background:#10b981; text-decoration:none; color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(16,185,129,0.3); transition:0.2s;">📞 تماس</a>`; 
                 } else if (d.clientPhone && d.clientPhone2) {
-                    callButtons += `<a href="tel:${d.clientPhone}" class="call-btn" style="background:#10b981; text-decoration:none; color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(16,185,129,0.3); transition:0.2s; margin-left:4px;">📞 تماس اصلی</a>`; 
-                    callButtons += `<a href="tel:${d.clientPhone2}" class="call-btn" style="background:#8b5cf6; text-decoration:none; color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(139,92,246,0.3); transition:0.2s;">📞 تماس دوم</a>`; 
+                    callButtons += `<a href="tel:${d.clientPhone}" class="call-btn" style="background:#10b981; text-decoration:none; color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(16,185,129,0.3); transition:0.2s; margin-left:4px;">📞 تماس ۱</a>`; 
+                    callButtons += `<a href="tel:${d.clientPhone2}" class="call-btn" style="background:#8b5cf6; text-decoration:none; color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(139,92,246,0.3); transition:0.2s;">📞 تماس ۲</a>`; 
                 }
                 
-                // ⚡ منطق هوشمند برای نمایش بودجه بر اساس نوع واگذاری
                 let budgetHtml = '';
                 if (d.dealType === 'فروش' && d.budget > 0) {
                     budgetHtml = `<br/><span style="color:#10b981; display:inline-block; margin-top:8px;">💰 بودجه خرید: ${window.formatMoney(d.budget)} تومان</span>`;
@@ -2537,8 +2847,9 @@ return `<div style="background: var(--bg-body); padding: 12px; border-radius: 12
                     }
                 }
 
-                htmlStr += `<div class="property-card fade-in"><div class="card-header" style="display:flex; align-items:center;"><span class="tag tag-demand">تقاضای مشتری</span>${matchBadge}${userProfile.role === 'مدیر' ? `<button onclick="showDeleteModal('${d.id}', 'demand')" class="action-btn delete" style="background:transparent; border:none; box-shadow:none;">🗑️</button>` : ''}</div><div class="card-body"><h3 class="card-title" style="font-size:20px;">👤 ${d.clientName} <div style="display:flex;">${callButtons}</div></h3><div style="font-size: 15px; font-weight: 900; margin-bottom: 16px; line-height:1.8; color:var(--text-main);">نیاز: ${d.dealType} ${d.usage} حدود ${d.area} متر در ${d.city}${budgetHtml}</div>${d.desc ? `<div class="card-desc" style="margin-bottom: 0;"><b>توضیحات:</b> ${d.desc}</div>` : ''}${followUpHtml}<div class="card-author" style="margin-top: 20px; border-top: 2px solid var(--border); padding-top: 16px;">ثبت کننده: <b style="color:var(--primary); font-size:14px;">${d.authorName}</b></div>${matchDetails}</div></div>`;
-            }); 
+                // ⚡ در خط زیر استایل بخش فوتر کارت (card-author) اصلاح شد تا تاریخ ثبت به صورت متقارن در سمت چپ قرار بگیرد
+                htmlStr += `<div class="property-card fade-in"><div class="card-header" style="display:flex; align-items:center;"><span class="tag tag-demand">تقاضای مشتری</span>${matchBadge}${userProfile.role === 'مدیر' ? `<button onclick="showDeleteModal('${d.id}', 'demand')" class="action-btn delete" style="background:transparent; border:none; box-shadow:none;">🗑️</button>` : ''}</div><div class="card-body"><h3 class="card-title" style="font-size:20px;">👤 ${d.clientName} <div style="display:flex;">${callButtons}</div></h3><div style="font-size: 15px; font-weight: 900; margin-bottom: 16px; line-height:1.8; color:var(--text-main);">نیاز: ${d.dealType} ${d.usage} حدود ${d.area} متر در ${d.city}${budgetHtml}</div>${d.desc ? `<div class="card-desc" style="margin-bottom: 0;"><b>توضیحات:</b> ${d.desc}</div>` : ''}${followUpHtml}<div class="card-author" style="margin-top: 20px; border-top: 2px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;"><div>ثبت کننده: <b style="color:var(--primary); font-size:14px;">${d.authorName}</b></div><div style="color: var(--text-muted); font-size:13px; font-weight:bold;">📅 ثبت: ${regDateShamsi}</div></div>${matchDetails}</div></div>`;
+            });
             container.innerHTML = htmlStr; 
 
             if (totalPages > 1) {
@@ -2594,9 +2905,10 @@ return `<div style="background: var(--bg-body); padding: 12px; border-radius: 12
                 else if (isPending) badgeHtml = `<span class="tag tag-exchange" style="border:none; padding:6px 12px; font-size:12px;">در انتظار تایید ⏳</span>`;
                 else badgeHtml = `<span class="tag tag-sell" style="border:none; padding:6px 12px; font-size:12px;">حساب فعال ✅</span>`;
 
+                // ⚡ محاسبه دقیق زمان آنلاین بودن با در نظر گرفتن تاخیر سرور (تولرانس ۲ دقیقه)
                 const lastSeen = m.lastSeen ? parseInt(m.lastSeen) * 1000 : 0;
-                const isOnline = Math.abs(Date.now() - lastSeen) < 60000; 
-                const onlineBadge = isActive ? `<span id="status-badge-${m.id}">${isOnline ? '<span style="color:#10b981; font-size:11px; margin-right:8px;">🟢 آنلاین</span>' : '<span style="color:#94a3b8; font-size:11px; margin-right:8px;">⚪ آفلاین</span>'}</span>` : '';
+                const isOnline = lastSeen > 0 && (Date.now() - lastSeen) < 120000; 
+                const onlineBadge = isActive ? `<span id="status-badge-${m.id}">${isOnline ? '<span style="color:#10b981; font-size:11px; margin-right:8px; display:inline-flex; align-items:center; gap:3px;">🟢 <b style="font-weight:900;">آنلاین</b></span>' : '<span style="color:#94a3b8; font-size:11px; margin-right:8px; display:inline-flex; align-items:center; gap:3px;">⚪ <b style="font-weight:900;">آفلاین</b></span>'}</span>` : '';
 
                 let btnHtml = '';
                 if (isActive) btnHtml = `<button onclick="toggleMemberStatus('${m.id}', 'active')" class="btn-modern" style="background:linear-gradient(135deg, #ef4444, #b91c1c); padding: 8px 14px; font-size:12px; width:auto; margin:0;">🚫 مسدود</button>`;
@@ -3125,5 +3437,781 @@ return `<div style="background: var(--bg-body); padding: 12px; border-radius: 12
                 // چون grid-2 رو برداشتیم، کادر رهن به تنهایی ۱۰۰٪ عرض رو می‌گیره
             }
         };
-    </script>
+     // ========================================================
+        // 🛡️ سیستم نگهبان قدرتمند پلن‌ها (نسخه نهایی و قطعی) 🛡️
+        // ========================================================
+(function() {
+    try {
+        // ۱. استایل فوق‌العاده زیبای قفل (خاکستری، با کادر قرمز و قفل بزرگ)
+        if (!document.getElementById('lock-style-freemium')) {
+            const style = document.createElement('style');
+            style.id = 'lock-style-freemium';
+            style.innerHTML = `
+                .locked-item {
+                    opacity: 0.6 !important;
+                    filter: grayscale(100%) !important;
+                    position: relative !important;
+                    border: 2px dashed #ef4444 !important;
+                    cursor: not-allowed !important;
+                }
+                .locked-item::after {
+                    content: "🔒";
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 24px;
+                    z-index: 9999;
+                    background: rgba(255,255,255,0.95);
+                    padding: 4px 10px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    pointer-events: none;
+                    color: #ef4444;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // ۲. موتور اسکنر (هیچ دکمه‌ای نمی‌تواند از این موتور فرار کند)
+        function runLockEngine() {
+            let up = window.userProfile;
+            if (!up) {
+                try { up = JSON.parse(localStorage.getItem('amlakProfile')); } catch(e){}
+            }
+            
+            let plan = 'مهمان';
+            if (up && up.plan) {
+                plan = String(up.plan).toLowerCase().trim();
+            }
+
+            // 🤖 🌟 مدیریت اختصاصی دکمه جارویس
+            const jarvisBtn = document.getElementById('jarvis-btn');
+            if (jarvisBtn) {
+                // پاک کردن قفل فیزیکی قبلی اگه وجود داشت
+                const existingLock = jarvisBtn.querySelector('.jarvis-custom-lock');
+                if (existingLock) existingLock.remove();
+
+                if (plan === 'مهمان' || plan === 'guest' || !up) {
+                    // حالت اول: مهمان -> کلاً غیب
+                    jarvisBtn.style.setProperty('display', 'none', 'important');
+                } else if (plan === 'vip' || plan === 'admin') {
+                    // حالت دوم: VIP -> کاملاً فعال
+                    jarvisBtn.style.setProperty('display', 'flex', 'important'); 
+                    jarvisBtn.style.opacity = '1';
+                    jarvisBtn.style.filter = 'none';
+                    jarvisBtn.style.cursor = 'pointer';
+                    jarvisBtn.onclick = function() {
+                        if (typeof toggleJarvis === 'function') toggleJarvis();
+                    };
+                } else {
+                    // حالت سوم: Basic و Pro -> نمایش دکمه اما قفل شده (بدون دادن کلاس مخفی‌کننده)
+                    jarvisBtn.style.setProperty('display', 'flex', 'important'); 
+                    jarvisBtn.style.opacity = '0.5'; 
+                    jarvisBtn.style.filter = 'grayscale(100%)'; 
+                    jarvisBtn.style.cursor = 'not-allowed';
+                    
+                    // ✨ اضافه کردن فیزیکی شکل قفل روی دکمه (بدون استفاده از کلاس‌های مخرب)
+                    const lockBadge = document.createElement('div');
+                    lockBadge.className = 'jarvis-custom-lock';
+                    lockBadge.innerHTML = '🔒';
+                    lockBadge.style.cssText = 'position: absolute; bottom: -2px; right: -2px; font-size: 14px; background: #1e293b; border: 2px solid #334155; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 100;';
+                    jarvisBtn.appendChild(lockBadge);
+                    
+                    // لغو عملکرد دکمه و نمایش توست
+                    jarvisBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (typeof window.showToast === 'function') {
+                            window.showToast("⭐ این دستیار هوشمند ویژه کاربران VIP است. حساب خود را ارتقا دهید!");
+                        } else {
+                            alert("این ابزار ویژه مسدود است.");
+                        }
+                    };
+                }
+            }
+            // -------------------------------------------------------------
+
+            // پاکسازی قفل از بقیه دکمه‌ها (به جز جارویس)
+            document.querySelectorAll('.locked-item').forEach(el => {
+                if (el.id !== 'jarvis-btn') el.classList.remove('locked-item');
+            });
+
+            if (plan === 'vip' || plan === 'admin') return;
+
+            // اسکن بقیه دکمه‌های سایت طبق منطق خودت
+            const elements = document.querySelectorAll('button, span, a, div');
+            elements.forEach(el => {
+                let oc = el.getAttribute('onclick') || '';
+                let id = el.id || '';
+                let isLocked = false;
+
+                // جارویس رو از حلقه خطرناک رد می‌کنیم
+                if (id === 'jarvis-btn') return; 
+
+                if (plan === 'basic' || plan === 'pro') {
+                    if (id === 'tab-dashboard') isLocked = true; 
+                    if (oc.includes('switchTab') && oc.includes('dashboard')) isLocked = true; 
+                }
+
+                if (plan === 'basic') {
+                    if (id === 'tab-map') isLocked = true; 
+                    if (id === 'btn-export-csv') isLocked = true; 
+                    if (oc.includes('openMapModal')) isLocked = true; 
+                    if (oc.includes('printCatalog') || oc.includes('printMultipleCatalog')) isLocked = true; 
+                    if (oc.includes('matches-')) isLocked = true; 
+                    if (oc.includes('viewMatchedProperty')) isLocked = true; 
+                }
+
+                if (isLocked) {
+                    el.classList.add('locked-item');
+                }
+            });
+        }
+
+        // ۳. اجرای اسکنر هر نیم ثانیه (به محض ساخته شدن فایل جدید، قفل اعمال میشه)
+        setInterval(() => {
+            try { runLockEngine(); } catch(e) {}
+        }, 500);
+
+        // ۴. بلاک کردن کلیک‌ها به صورت بی‌رحمانه!
+        document.addEventListener('click', function(e) {
+            const lockedBtn = e.target.closest('.locked-item');
+            if (lockedBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                if (typeof window.showToast === 'function') {
+                    window.showToast("🔒 این ابزار ویژه در پلن فعلی آژانس مسدود است. جهت دسترسی ارتقا دهید.");
+                } else {
+                    alert("🔒 دسترسی محدود است.");
+                }
+            }
+        }, true);
+
+    } catch(err) {
+        console.error("Lock System Error:", err);
+    }
+})();
+      // ========================================================
+        // 📝 سیستم لود و نمایش هوشمند یادداشت‌ها از دیتابیس (ابری)
+        // ========================================================
+        window.openNotesModal = async function() {
+            try {
+                // ۱. پیدا کردنِ قطعیِ پروفایل کاربر
+                let up = window.userProfile;
+                if (!up) {
+                    try { up = JSON.parse(localStorage.getItem('amlakProfile')); } catch(e){}
+                }
+                
+                if (!up || !up.name) {
+                    alert("❌ خطای سیستم: مشخصات شما برای لود یادداشت‌ها یافت نشد!");
+                    return;
+                }
+
+                if (up.role === 'مهمان') {
+                    if(typeof window.showToast === 'function') {
+                        window.showToast("این ابزار مخصوص مشاوران و مدیران آژانس است.");
+                    } else {
+                        alert("این ابزار مخصوص مشاوران و مدیران است.");
+                    }
+                    return;
+                }
+                
+                // ۲. روشن کردن لودینگ
+                const loader = document.getElementById('global-loader');
+                if (loader) loader.style.display = 'flex';
+                
+                try {
+                    // ۳. درخواست یادداشت‌ها از سرور
+                    const res = await window.apiCall('getNotes', { username: up.name });
+                    
+                    // ۴. ⚡ حل مشکل پاکتِ اضافه: استخراج درست متن از داخل response
+                    let finalNoteText = '';
+                    if (res && res.note_text) finalNoteText = res.note_text;
+                    else if (res && res.response && res.response.note_text) finalNoteText = res.response.note_text;
+                    
+                    const textarea = document.getElementById('personal-notes-textarea');
+                    if (textarea) {
+                        textarea.value = finalNoteText;
+                    }
+                    
+                    // ۵. نمایش پنجره
+                    const modal = document.getElementById('notes-modal');
+                    if (modal) modal.classList.remove('hidden');
+                    
+                } catch(e) {
+                    console.error("Load Notes Error:", e);
+                    alert("❌ خطا در دریافت اطلاعات از سرور! لطفاً اینترنت خود را چک کنید.");
+                } finally {
+                    if (loader) loader.style.display = 'none';
+                }
+            } catch (fatalError) {
+                alert("❌ خطای اساسی در اجرای مودال: " + fatalError.message);
+            }
+        };
+      window.savePersonalNotes = async function() {
+            try {
+                let up = window.userProfile;
+                if (!up) { try { up = JSON.parse(localStorage.getItem('amlakProfile')); } catch(e){} }
+                if (!up || !up.name) { alert("❌ خطای سیستم: نام کاربری یافت نشد!"); return; }
+                // ⚡ گرفتن متن از کادر
+                const text = document.getElementById('personal-notes-textarea').value;
+                
+                const btn = document.querySelector('[onclick="window.savePersonalNotes()"]');
+                const originalText = btn ? btn.innerText : 'ذخیره یادداشت';
+                if (btn) { btn.innerText = 'در حال ذخیره...'; btn.disabled = true; }
+
+                try {
+                    await window.apiCall('saveNotes', { username: up.name, note_text: text });
+                    if(typeof window.showToast === 'function') window.showToast("📝 یادداشت شما ذخیره شد ✅");
+                    if(typeof window.closeNotesModal === 'function') window.closeNotesModal();
+                } catch(e) {
+                    alert("❌ ارور از سمت سرور: " + (e.message || ""));
+                } finally {
+                    if (btn) { btn.innerText = originalText; btn.disabled = false; }
+                }
+            } catch (fatalError) {
+                alert("❌ خطای اساسی: " + fatalError.message);
+            }
+        };
+      // ========================================================
+        // 🔍 سیستم فیلتر و مرتب‌سازی تقاضاها (متراژ و قیمت)
+        // ========================================================
+        window.demandFilters = { sort: 'date-desc', minArea: '', maxArea: '', minBudget: '', maxBudget: '' };
+
+        window.openDemandFilterModal = function() {
+            document.getElementById('df-sort').value = window.demandFilters.sort;
+            document.getElementById('df-min-area').value = window.demandFilters.minArea;
+            document.getElementById('df-max-area').value = window.demandFilters.maxArea;
+            document.getElementById('df-min-budget').value = window.demandFilters.minBudget;
+            document.getElementById('df-max-budget').value = window.demandFilters.maxBudget;
+            document.getElementById('demand-filter-modal').classList.remove('hidden');
+        };
+
+        window.applyDemandFilters = function() {
+            window.demandFilters.sort = document.getElementById('df-sort').value;
+            window.demandFilters.minArea = document.getElementById('df-min-area').value;
+            window.demandFilters.maxArea = document.getElementById('df-max-area').value;
+            window.demandFilters.minBudget = document.getElementById('df-min-budget').value;
+            window.demandFilters.maxBudget = document.getElementById('df-max-budget').value;
+            
+            document.getElementById('demand-filter-modal').classList.add('hidden');
+            window.renderDemands(); // ⚡ رفرش کردن لیست تقاضاها روی صفحه
+        };
+
+        window.clearDemandFilters = function() {
+            window.demandFilters = { sort: 'date-desc', minArea: '', maxArea: '', minBudget: '', maxBudget: '' };
+            document.getElementById('demand-filter-modal').classList.add('hidden');
+            window.renderDemands();
+        };
+      // ⚡ تابع ریست کردن فیلترهای تقاضا
+        window.clearDemandInlineFilters = function() {
+            // خالی کردن فیلدهای متنی و عددی
+            const inputIds = ['search-demand-input', 'min-area-demand', 'max-area-demand', 'min-budget-demand', 'max-budget-demand'];
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            
+            // برگرداندن مرتب‌سازی به حالت جدیدترین‌ها
+            const sortEl = document.getElementById('sort-demand-select');
+            if (sortEl) sortEl.value = 'date-desc';
+            
+            // رفرش کردن لیست
+            window.renderDemands();
+        };
+      // ========================================================
+        // 💓 سیستم ضربان قلب (وضعیت آنلاین/آفلاین مشاوران)
+        // ========================================================
+        window.startPingService = function() {
+            // توقف تایمر قبلی (برای جلوگیری از تداخل)
+            if (window.pingTimer) clearInterval(window.pingTimer);
+            
+            const sendPing = async () => {
+                let up = window.userProfile;
+                if (!up) { try { up = JSON.parse(localStorage.getItem('amlakProfile')); } catch(e){} }
+                
+                // فقط اگر کاربر مهمان نباشد پینگ ارسال می‌شود
+                if (up && up.name && up.role !== 'مهمان') {
+                    try { await window.apiCall('ping', {}); } catch(e) { console.log('Ping skipped'); }
+                }
+            };
+            
+            // تکرار ارسال پینگ هر 2۰ ثانیه (2۰ هزار میلی‌ثانیه)
+            window.pingTimer = setInterval(sendPing, 20000);
+        };
+
+        // روشن کردن سیستم بلافاصله بعد از باز شدن سایت
+        setTimeout(() => { window.startPingService(); }, 2000);
+      // ========================================================
+        // 🤖 توابع کنترل رابط کاربری جارویس
+        // ========================================================
+        window.toggleJarvis = function() {
+            // اگر دکمه به خاطر پلن قفل بود، اصلاً بازش نکن
+            if (document.getElementById('jarvis-btn').classList.contains('locked-item')) return;
+            document.getElementById('jarvis-modal').classList.toggle('hidden');
+            setTimeout(() => document.getElementById('jarvis-input').focus(), 100);
+        };
+      // ========================================================
+        // 🎙️ سیستم ضبط صدای آفلاین (مقاوم در برابر فیلترینگ)
+        // ========================================================
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        window.startJarvisVoice = async function() {
+            const micBtn = document.getElementById('jarvis-mic-btn');
+            const inputEl = document.getElementById('jarvis-input');
+
+            // اگر در حال ضبط بودیم، متوقفش کن
+            if (isRecording) {
+                mediaRecorder.stop();
+                return;
+            }
+
+            try {
+                // درخواست دسترسی به میکروفون دستگاه
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstart = () => {
+                    isRecording = true;
+                    micBtn.classList.add('recording');
+                    inputEl.placeholder = "در حال ضبط صدا... برای اتمام دوباره کلیک کنید 🎙️";
+                    inputEl.value = '';
+                };
+
+                mediaRecorder.onstop = async () => {
+                    isRecording = false;
+                    micBtn.classList.remove('recording');
+                    inputEl.placeholder = "صدا در حال آماده‌سازی برای ارسال... ⏳";
+                    
+                    // خاموش کردن میکروفون برای جلوگیری از مصرف باتری
+                    stream.getTracks().forEach(track => track.stop());
+
+                    // تبدیل تکه‌های صدا به یک فایل صوتی (Audio Blob)
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    // ⚡ اینجا فایل صوتی آماده است! می‌فرستیمش به سرور
+                    await processAudioOnServer(audioBlob);
+                };
+
+                // شروع ضبط
+                mediaRecorder.start();
+
+            } catch (err) {
+                console.error("Mic access denied:", err);
+                window.showToast("لطفاً اجازه دسترسی به میکروفون را در مرورگر خود بدهید 🎙️");
+            }
+        };
+// ارسال از طریق تایپ کردن متنی
+        window.sendToJarvis = async function() {
+            const inputEl = document.getElementById('jarvis-input');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            const chatBox = document.getElementById('jarvis-chat-box');
+            chatBox.innerHTML += `<div class="jarvis-message user">${text}</div>`;
+            inputEl.value = '';
+
+            const typingId = 'typing-' + Date.now();
+            chatBox.innerHTML += `<div id="${typingId}" class="jarvis-message ai" style="opacity: 0.7;">در حال تحلیل دستور... 🧠</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            await callJarvisBrain({ text: text }, chatBox, typingId);
+        };
+
+        // ارسال از طریق میکروفون (تبدیل صدا به متن کدگذاری شده Base64)
+        // 🎙️ ارسال مستقیم فایل ضبط‌شده به موتور تبدیل صوت به متن و سپس ارسال متن به جارویس
+// 🎙️ ارسال مستقیم فایل ضبط‌شده به موتور تبدیل صوت به متن و سپس ارسال متن به جارویس
+window.processAudioOnServer = async function(audioBlob) {
+    const chatBox = document.getElementById('jarvis-chat-box');
+    const inputEl = document.getElementById('jarvis-input');
+    
+    // ۱. نمایش حباب پیام صوتی در حال پردازش در چت کاربر
+    const tempUserMsgId = 'voice-user-' + Date.now();
+    chatBox.innerHTML += `<div id="${tempUserMsgId}" class="jarvis-message user">🎤 <i>[صدا ضبط شد، در حال تبدیل به متن...]</i></div>`;
+    
+    const typingId = 'typing-' + Date.now();
+    chatBox.innerHTML += `<div id="${typingId}" class="jarvis-message ai" style="opacity: 0.7;">در حال شنیدن و پیاده‌سازی صدا... 🎧</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        // ۲. آماده‌سازی پلود به صورت FormData برای سازگاری با سرور و فایروال
+        const formData = new FormData();
+        formData.append('audio_file', audioBlob, 'voice_command.webm');
+        formData.append('action', 'transcribe_audio');
+        formData.append('api_key', 'AmLaK_Super_Secret_2026!');
+
+        let up = window.userProfile;
+        if (!up) {
+            try { up = JSON.parse(localStorage.getItem('amlakProfile')); } catch(e){}
+        }
+
+        const headers = {
+            'X-API-Key': 'AmLaK_Super_Secret_2026!',
+            'X-Agency-ID': up ? up.agencyId : '',
+            'X-Auth-Token': up ? up.token : ''
+        };
+
+        // ۳. ارسال به اندپوینت تبدیل صوت
+        const res = await fetch(`${API_URL}?action=transcribe_audio`, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        const result = await res.json();
+
+        if (!result.success || !result.text || !result.text.trim()) {
+            throw new Error(result.error || 'متنی از صدای ارسالی تشخیص داده نشد.');
+        }
+
+        const transcribedText = result.text.trim();
+
+        // ۴. جایگزین کردن متن پیاده‌شده به جای پیام موقت
+        const userMsgEl = document.getElementById(tempUserMsgId);
+        if (userMsgEl) {
+            userMsgEl.innerHTML = `🎤 ${window.escapeHTML(transcribedText)}`;
+        }
+
+        // ۵. به‌روزرسانی پیام وضعیت هوش مصنوعی
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) {
+            typingEl.innerText = 'در حال تحلیل مشخصات ملک... 🧠';
+        }
+
+        // ۶. ارسال متن به دست آمده به مغز پردازشگر دستورات
+        await callJarvisBrain({ text: transcribedText }, chatBox, typingId);
+
+    } catch (err) {
+        console.error("Transcribe Error:", err);
+        if (document.getElementById(typingId)) document.getElementById(typingId).remove();
+        chatBox.innerHTML += `<div class="jarvis-message ai" style="color:#ef4444;">❌ خطا در پردازش صدا: ${err.message || 'ارتباط با سرور برقرار نشد.'}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } finally {
+        if (inputEl) inputEl.placeholder = "دستور خود را بگویید یا تایپ کنید...";
+    }
+};
+
+        // ⚡ تابع مرکزی با استفاده از موتور اصلی سیستم (apiCall)
+        window.callJarvisBrain = async function(payload, chatBox, typingId) {
+            try {
+                // ارسال درخواست دقیقاً مثل بقیه بخش‌های سایتت (امنیت 100%)
+                const resData = await window.apiCall('jarvisProcess', payload);
+
+                if (document.getElementById(typingId)) document.getElementById(typingId).remove();
+
+                const aiMsg = resData.ai_message;
+                const action = resData.action;
+                const params = resData.params;
+
+                // نمایش جواب جارویس
+                chatBox.innerHTML += `<div class="jarvis-message ai">${aiMsg}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // ⚡ جادوی اتوماسیون: اجرای فرمان پر کردن فرم
+                if (action === 'openPropertyModal') {
+                    setTimeout(() => {
+                        window.toggleJarvis(); // بستن موقت چت جارویس
+                        if (typeof window.switchTab === 'function') window.switchTab('add'); // باز کردن تب ثبت
+                        
+                        // صبر می‌کنیم تا تب کاملاً باز بشه
+                        setTimeout(() => {
+                            console.log("🧠 دیتای خالص هوش مصنوعی:", params);
+                            
+                            try {
+                                // ۱. نوع واگذاری
+                                if (params.dealType) window.setDealType(params.dealType);
+                                
+                                // ۲. کاربری (تشخیص هوشمند مسکونی/تجاری/ویلایی)
+                                if (params.usage) {
+                                    const uEl = document.getElementById('usage');
+                                    if (uEl) {
+                                        uEl.value = params.usage;
+                                        if (typeof window.toggleLandOptions === 'function') window.toggleLandOptions();
+                                    }
+                                }
+                                
+                                // ۳. متراژ و محله
+                                if (params.area && document.getElementById('area')) {
+                                    document.getElementById('area').value = String(params.area).replace(/[^0-9]/g, '');
+                                }
+                                if (params.location && document.getElementById('location')) {
+                                    document.getElementById('location').value = params.location;
+                                }
+                                
+                                // ۴. قیمت‌ها (با تفکیک دقیق فروش و رهن و اجاره)
+                                setTimeout(() => {
+                                    if (params.dealType === 'فروش' && params.price) {
+                                        const pEl = document.getElementById('price');
+                                        if (pEl) {
+                                            pEl.value = window.formatMoney(String(params.price).replace(/[^0-9]/g, ''));
+                                            window.updateMoneyText(pEl, 'price-text');
+                                        }
+                                    } else {
+                                        if (params.deposit && document.getElementById('deposit')) {
+                                            const dEl = document.getElementById('deposit');
+                                            dEl.value = window.formatMoney(String(params.deposit).replace(/[^0-9]/g, ''));
+                                            window.updateMoneyText(dEl, 'deposit-text');
+                                        }
+                                        if (params.rent && document.getElementById('rent') && params.dealType === 'رهن و اجاره') {
+                                            const rEl = document.getElementById('rent');
+                                            rEl.value = window.formatMoney(String(params.rent).replace(/[^0-9]/g, ''));
+                                            window.updateMoneyText(rEl, 'rent-text');
+                                        }
+                                    }
+                                }, 250);
+
+                                // 🚀 ۵. جادوی جدید: پر کردن بقیه فیلدهای متنی و عددی (مالک، شهر، طبقه و...)
+                                const fieldMap = {
+                                    'referrer': params.referrer,
+                                    'phone': params.phone,
+                                    'city': params.city,
+                                    'exact-address': params.exactAddress,
+                                    'floor': params.floor,
+                                    'unit': params.unit,
+                                    'year-built': params.yearBuilt,
+                                    'build-area': params.buildArea,
+                                    'description': params.description,
+                                    'internal-note': params.internalNote
+                                };
+                                
+                                for (const [id, value] of Object.entries(fieldMap)) {
+                                    if (value !== null && value !== undefined && document.getElementById(id)) {
+                                        document.getElementById(id).value = value;
+                                    }
+                                }
+
+                                // 🚀 ۶. تنظیم چک‌باکس‌ها (امکانات رفاهی)
+                                if (document.getElementById('has-parking')) document.getElementById('has-parking').checked = !!params.hasParking;
+                                if (document.getElementById('has-elevator')) document.getElementById('has-elevator').checked = !!params.hasElevator;
+                                if (document.getElementById('has-storage')) document.getElementById('has-storage').checked = !!params.hasStorage;
+
+                                // 🚀 ۷. تنظیم تعداد خواب (هماهنگ با Select)
+                                if (params.rooms !== null && params.rooms !== undefined && document.getElementById('rooms')) {
+                                     let rVal = String(params.rooms);
+                                     if(rVal >= 5) rVal = "5+";
+                                     if(rVal == 0 || rVal.includes("بدون")) rVal = "بدون خواب/سوئیت";
+                                     document.getElementById('rooms').value = rVal;
+                                }
+
+                                window.showToast("✨ جارویس فرم را با موفقیت پر کرد!");
+
+                            } catch (e) {
+                                console.error("❌ خطای جاوااسکریپت:", e);
+                            }
+                        }, 600);
+                    }, 1500);
+                }
+
+            } catch (error) {
+                console.error("Jarvis Error:", error);
+                if (document.getElementById(typingId)) document.getElementById(typingId).remove();
+                chatBox.innerHTML += `<div class="jarvis-message ai" style="color:#ef4444;">❌ ارور: ${error.message || 'ارتباط با سرور قطع شد'}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        };
+        
+</script>
+  <button id="jarvis-btn" onclick="toggleJarvis()" style="display: none;" class="jarvis-fab" title="دستیار هوشمند (ویژه VIP)">
+    <div class="jarvis-core"></div>
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.9)); z-index: 2;">
+        <path d="M12 2a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2z"></path>
+        <path d="M19 8h-1.5a2.5 2.5 0 0 0-2.5-2.5H9A2.5 2.5 0 0 0 6.5 8H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1.5a2.5 2.5 0 0 0 2.5 2.5h6a2.5 2.5 0 0 0 2.5-2.5H19a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2z"></path>
+        <circle cx="9" cy="13" r="1.5" fill="currentColor"></circle>
+        <circle cx="15" cy="13" r="1.5" fill="currentColor"></circle>
+        <path d="M10 17h4"></path>
+    </svg>
+</button>
+
+<div id="jarvis-modal" class="jarvis-modal hidden">
+    <div class="jarvis-header">
+        <div class="jarvis-title">
+            <div class="jarvis-pulse"></div>
+            <span>دستیار هوشمند سیستم</span>
+        </div>
+        <button class="jarvis-close" onclick="toggleJarvis()">✖</button>
+    </div>
+    
+    <div class="jarvis-body" id="jarvis-chat-box">
+        <div class="jarvis-message ai">
+            سلام! من دستیار هوشمند شما هستم. می‌تونم فایل جدید ثبت کنم، اطلاعات رو فیلتر کنم یا تو مدیریت آژانس کمکتون کنم. چه دستوری دارید؟
+        </div>
+    </div>
+    
+    <div class="jarvis-footer">
+        <button id="jarvis-mic-btn" onclick="startJarvisVoice()" class="jarvis-mic" title="فرمان صوتی">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+        </button>
+        
+        <input type="text" id="jarvis-input" placeholder="دستور خود را بگویید یا تایپ کنید..." onkeypress="if(event.key === 'Enter') sendToJarvis()">
+        
+        <button onclick="sendToJarvis()" class="jarvis-send">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+    </div>
+</div>
+
+<style>
+    /* 🎨 استایل‌های لاکچری و مدرن جارویس */
+    .jarvis-fab {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        border: 2px solid #3b82f6;
+        color: #60a5fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        z-index: 99;
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .jarvis-fab:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(59, 130, 246, 0.7); }
+    
+    /* افکت راکتور قلب (شبیه آیرون من) */
+    .jarvis-core {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 70%);
+        animation: jarvisPulse 2s infinite;
+    }
+    @keyframes jarvisPulse { 0% { transform: scale(0.9); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 0; } 100% { transform: scale(0.9); opacity: 0; } }
+
+    /* پنجره چت */
+    .jarvis-modal {
+        position: fixed;
+        bottom: 105px;
+        left: 30px;
+        width: 360px;
+        height: 500px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(59, 130, 246, 0.1);
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow: hidden;
+        transition: 0.3s ease;
+        transform-origin: bottom left;
+    }
+    .jarvis-modal.hidden { opacity: 0; transform: scale(0.8) translateY(20px); pointer-events: none; }
+
+    .jarvis-header {
+        background: rgba(30, 41, 59, 0.8);
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #334155;
+    }
+    .jarvis-title { display: flex; align-items: center; gap: 10px; color: #e2e8f0; font-weight: bold; font-size: 15px; }
+    .jarvis-pulse { width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981; animation: blink 1.5s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .jarvis-close { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; transition: 0.2s; }
+    .jarvis-close:hover { color: #ef4444; }
+
+    .jarvis-body {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .jarvis-message {
+        max-width: 85%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    .jarvis-message.ai { background: #1e293b; color: #e2e8f0; border-top-left-radius: 4px; border: 1px solid #334155; }
+    .jarvis-message.user { background: #3b82f6; color: #ffffff; align-self: flex-end; border-top-right-radius: 4px; }
+
+    .jarvis-footer {
+        padding: 15px;
+        background: rgba(30, 41, 59, 0.8);
+        border-top: 1px solid #334155;
+        display: flex;
+        gap: 10px;
+    }
+    #jarvis-input {
+        flex: 1;
+        background: #0f172a;
+        border: 1px solid #475569;
+        color: #e2e8f0;
+        padding: 10px 15px;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 13px;
+    }
+    #jarvis-input:focus { outline: none; border-color: #3b82f6; }
+    .jarvis-send {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .jarvis-send:hover { background: #2563eb; transform: scale(1.05); }
+
+    /* ریسپانسیو برای موبایل */
+    @media (max-width: 576px) {
+        .jarvis-modal { width: calc(100% - 40px); left: 20px; bottom: 95px; }
+    }
+  /* استایل دکمه میکروفون */
+    .jarvis-mic {
+        background: #1e293b;
+        color: #94a3b8;
+        border: 1px solid #475569;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .jarvis-mic:hover { background: #334155; color: #e2e8f0; }
+    
+    /* افکت وقتی جارویس در حال گوش دادن است */
+    .jarvis-mic.recording {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+        animation: pulseRed 1.5s infinite;
+    }
+    @keyframes pulseRed {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+</style>
 </body>
