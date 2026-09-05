@@ -40,7 +40,9 @@
 
     <script>
         // ⚡ توجه: اگر این فایل در پوشه‌ای غیر از پوشه اصلی سایت است، مسیر api.php را اصلاح کنید
-        const API_URL = 'api.php'; 
+        const API_URL = 'api.php';
+        // ⚡ کلید اجباری api.php (خط ۲۵۹). بدون این کلید سرور ۴۰۳ با پیام «درخواست نامعتبر» برمی‌گرداند.
+        const API_KEY = "AmLaK_Super_Secret_2026!";
 
         async function handleCreateAgency(e) {
             e.preventDefault();
@@ -55,6 +57,7 @@
                 const expireAt = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000).toISOString();
                 
                 const payload = { 
+                    api_key: API_KEY, // ⚡ رفع باگ: این کلید قبلاً فرستاده نمی‌شد و سرور ۴۰۳ می‌داد
                     id: agencyCode, 
                     masterPass: masterPass, 
                     name: document.getElementById('sa-agency-name').value.trim(), 
@@ -69,11 +72,15 @@
 
                 const res = await fetch(`${API_URL}?action=saveAgency`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
                     body: JSON.stringify(payload)
                 });
                 
-                const data = await res.json();
+                // ⚡ اگر سرور به‌جای JSON صفحهٔ خطا بفرستد، پیام قابل‌فهم نشان بده نه خطای پارس
+                const rawText = await res.text();
+                let data;
+                try { data = JSON.parse(rawText); }
+                catch (parseErr) { throw new Error(`سرور پاسخ نامعتبر فرستاد (HTTP ${res.status}).`); }
                 if (data.error) throw new Error(data.error);
 
                 const resultEl = document.getElementById('sa-result');
