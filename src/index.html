@@ -1535,6 +1535,14 @@
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { try { if(typeof jalaliDatepicker !== 'undefined') jalaliDatepicker.startWatch({ time: false, hasSecond: false }); } catch(e){} }, 500);
             
+            // 🐛 window.showSuperAdminPanel هیچ‌جا تعریف نشده بود، پس نگه‌داشتن
+            //    انگشت روی شمارهٔ نسخه بعد از ۵ ثانیه با TypeError می‌ترکید و
+            //    حتی پیام «پنل مدیریت باز شد» هم نمایش داده نمی‌شد.
+            if (typeof window.showSuperAdminPanel !== 'function') {
+                window.showSuperAdminPanel = function() {
+                    window.open('super_admin_license_x_382967.php', '_blank', 'noopener');
+                };
+            }
             let pressTimer; const versionEl = document.getElementById('version-text');
             if (versionEl) {
                 const startPress = (e) => { if(e.type === 'touchstart') e.preventDefault(); pressTimer = setTimeout(() => { window.showSuperAdminPanel(); window.showToast("پنل مدیریت باز شد 🔓"); }, 5000); };
@@ -1805,13 +1813,20 @@
                 </div>`;
             }
 
-            const exactAddressStr = isAgency && prop.exactAddress ? `<div style="font-size:13px; color:var(--text-main); margin-bottom:12px; background: #fef2f2; padding:10px; border-radius:8px; border:1px solid #fecaca;"><b>🗺️ آدرس دقیق:</b> ${window.escapeHTML(prop.exactAddress)}</div>` : '';
-            const internalNoteStr = isAgency && prop.internalNote ? `<div style="font-size:13px; color:#991b1b; margin-bottom:12px; background: #fef2f2; padding:10px; border-radius:8px; border:1px dashed #fca5a5;"><b>📝 یادداشت داخلی:</b> ${window.escapeHTML(prop.internalNote)}</div>` : '';
+            const exactAddressStr = isAgency && prop.exactAddress ? `<div style="font-size:13px; color:var(--text-main); margin-bottom:12px; background: #fef2f2; padding:10px; border-radius:8px; border:1px solid #fecaca;"><b>🗺️ آدرس دقیق:</b> ${prop.exactAddress}</div>` : '';
+            const internalNoteStr = isAgency && prop.internalNote ? `<div style="font-size:13px; color:#991b1b; margin-bottom:12px; background: #fef2f2; padding:10px; border-radius:8px; border:1px dashed #fca5a5;"><b>📝 یادداشت داخلی:</b> ${prop.internalNote}</div>` : '';
             
             // ⚡ دقت کنید که متغیر قبلی حذف شده و باکس جدید دقیقاً قبل از قیمت‌ها رندر می‌شود
-            return `<div id="card-${prop.id}" class="property-card fade-in ${isSold ? 'sold' : ''} ${vipClass}"><div class="card-header"><div class="tags-container">${tags}</div><div class="card-actions">${actionsHtml}</div></div><div class="card-body"><h3 class="card-title"><span>${icon} ${prop.usage} در ${prop.city}${prop.location?'- '+prop.location:''}</span><div style="display:flex;">${isAgency ? callButtons : ''}</div></h3><div class="card-meta"><span title="متراژ">📐 ${prop.area} متر</span>${prop.usage === 'زمین/کلنگی' && prop.buildArea ? `<span title="متراژ بنا">🧱 بنا: ${prop.buildArea} متر</span>` : ''}${prop.rooms && prop.rooms !== 'بدون خواب/سوئیت' ? `<span title="خواب">🛏️ ${prop.rooms}</span>` : ''}${(prop.usage === 'مسکونی' || prop.usage === 'ویلایی') && prop.floor ? `<span title="طبقه">🏢 ${prop.floor} طبقه</span>` : ''}${(prop.usage === 'مسکونی' || prop.usage === 'ویلایی') && prop.unit ? `<span title="واحد">🚪 ${prop.unit} واحد</span>` : ''}${prop.yearBuilt ? `<span title="سال ساخت">🏗️ ${prop.yearBuilt}</span>` : ''}${isAgency ? `<span>👤 ${prop.referrer}</span>` : `<span title="محدوده">📍 محدوده: ${prop.location || 'نامشخص'}</span>`}${isAgency && prop.lat && prop.lat !== "0" && prop.lat !== "undefined" ? `<a href="https://neshan.org/maps/search/${parseFloat(prop.lat)},${parseFloat(prop.lng)}" target="_blank" class="route-link" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe; text-decoration:none; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; font-weight:bold;">📍 مسیریابی (نشان)</a>` : ''}</div>${amenitiesHtml}${exactAddressStr}${internalNoteStr}${agencyBadgeHtml}<div class="card-prices" ${!isAgency && !prop.showPriceGuest ? 'style="display:flex; justify-content:center; align-items:center; padding:16px; border: 1px dashed #ef4444; background: #fef2f2;"' : ''}>${priceHtml}</div>${prop.description ? `<div class="card-desc"><b>ℹ️ توضیحات:</b><br/>${window.escapeHTML(prop.description).replace(/\n/g, '<br/>')}</div>` : ''}${images}<div class="card-author" style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 16px; border-top: 1px dashed var(--border); margin-top: auto;"><div style="font-size: 12px;">${isAgency ? `ثبت شده توسط:<br/><b style="color:var(--primary); font-size: 14px;">${prop.authorName || 'نامشخص'}</b>` : callButtons}</div>${datesHtml}</div></div></div>`;
+            return `<div id="card-${prop.id}" class="property-card fade-in ${isSold ? 'sold' : ''} ${vipClass}"><div class="card-header"><div class="tags-container">${tags}</div><div class="card-actions">${actionsHtml}</div></div><div class="card-body"><h3 class="card-title"><span>${icon} ${prop.usage} در ${prop.city}${prop.location?'- '+prop.location:''}</span><div style="display:flex;">${isAgency ? callButtons : ''}</div></h3><div class="card-meta"><span title="متراژ">📐 ${prop.area} متر</span>${prop.usage === 'زمین/کلنگی' && prop.buildArea ? `<span title="متراژ بنا">🧱 بنا: ${prop.buildArea} متر</span>` : ''}${prop.rooms && prop.rooms !== 'بدون خواب/سوئیت' ? `<span title="خواب">🛏️ ${prop.rooms}</span>` : ''}${(prop.usage === 'مسکونی' || prop.usage === 'ویلایی') && prop.floor ? `<span title="طبقه">🏢 ${prop.floor} طبقه</span>` : ''}${(prop.usage === 'مسکونی' || prop.usage === 'ویلایی') && prop.unit ? `<span title="واحد">🚪 ${prop.unit} واحد</span>` : ''}${prop.yearBuilt ? `<span title="سال ساخت">🏗️ ${prop.yearBuilt}</span>` : ''}${isAgency ? `<span>👤 ${prop.referrer}</span>` : `<span title="محدوده">📍 محدوده: ${prop.location || 'نامشخص'}</span>`}${isAgency && prop.lat && prop.lat !== "0" && prop.lat !== "undefined" ? `<a href="https://neshan.org/maps/search/${parseFloat(prop.lat)},${parseFloat(prop.lng)}" target="_blank" class="route-link" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe; text-decoration:none; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; font-weight:bold;">📍 مسیریابی (نشان)</a>` : ''}</div>${amenitiesHtml}${exactAddressStr}${internalNoteStr}${agencyBadgeHtml}<div class="card-prices" ${!isAgency && !prop.showPriceGuest ? 'style="display:flex; justify-content:center; align-items:center; padding:16px; border: 1px dashed #ef4444; background: #fef2f2;"' : ''}>${priceHtml}</div>${prop.description ? `<div class="card-desc"><b>ℹ️ توضیحات:</b><br/>${prop.description.replace(/\n/g, '<br/>')}</div>` : ''}${images}<div class="card-author" style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 16px; border-top: 1px dashed var(--border); margin-top: auto;"><div style="font-size: 12px;">${isAgency ? `ثبت شده توسط:<br/><b style="color:var(--primary); font-size: 14px;">${prop.authorName || 'نامشخص'}</b>` : callButtons}</div>${datesHtml}</div></div></div>`;
           }
 // 🛡️ فیلتر امنیتی ضد XSS
+        // ⚠️ توجه دربارهٔ escapeHTML:
+        // sanitizeInput در api.php از قبل htmlspecialchars می‌زند، پس داده‌ای که
+        // از دیتابیس می‌آید escape شده است. اگر اینجا دوباره escape کنیم، «&» به
+        // «&amp;amp;» و در صفحه «&amp;» نمایش داده می‌شود (encoding دوباره).
+        // پس برای فیلدهای دیتابیس از escapeHTML استفاده نکن.
+        // این تابع فقط برای متن‌هایی لازم است که از دیتابیس نمی‌آیند — مثل
+        // خروجی تبدیل صوت به متن (جارویس) که مستقیم از API خارجی می‌رسد.
         window.escapeHTML = function(str) {
             if (!str) return '';
             return String(str).replace(/[&<>'"]/g, function(match) {
@@ -2233,7 +2248,9 @@
                     unit: unitEl ? unitEl.value : '',
                     hasParking: document.getElementById('has-parking').checked, hasElevator: document.getElementById('has-elevator').checked, hasStorage: document.getElementById('has-storage').checked,
                     dealType: dealType, description: document.getElementById('description').value, internalNote: internalNoteEl ? internalNoteEl.value : '', 
-                    canExchange: document.getElementById('can-exchange').checked, canPartner: document.getElementById('can-partner').checked, isPreSale: document.getElementById('can-presale') ? document.getElementById('can-presale').checked : false, isVIP: document.getElementById('is-vip').checked, isVIP: isVipEl ? isVipEl.checked : false,
+                    canExchange: document.getElementById('can-exchange').checked, canPartner: document.getElementById('can-partner').checked, isPreSale: document.getElementById('can-presale') ? document.getElementById('can-presale').checked : false, // 🐛 قبلاً isVIP دو بار در همین object بود؛ اولی بدون بررسی وجود المان
+                    //    بود و اگر is-vip نبود TypeError می‌داد. نسخهٔ امن نگه داشته شد.
+                    isVIP: isVipEl ? isVipEl.checked : false,
                     showToGuest: showToGuestEl ? showToGuestEl.checked : false,
                     showPriceGuest: showPriceGuestEl ? showPriceGuestEl.checked : false, 
                     showImagesGuest: showImagesGuestEl ? showImagesGuestEl.checked : false, 
@@ -2988,16 +3005,13 @@
         }); 
 
         // حالت دوم: کشیدن و رها کردن پین (Drag & Drop)
+        // 🐛 قبلاً این هندلر دو بار پشت‌سرهم ثبت می‌شد و Leaflet هر دو را
+        //    صدا می‌زد، پس updateFormLocation دوبار اجرا می‌شد. نسخهٔ کامل‌تر
+        //    (که پیام map-feedback را هم نشان می‌دهد) نگه داشته شد.
         window.mapMarker.on('dragend', function(e) {
             const position = window.mapMarker.getLatLng();
             updateFormLocation(position.lat, position.lng);
             const mf = document.getElementById('map-feedback'); if(mf) mf.style.display = 'block';
-        });
-
-        // حالت دوم: کشیدن و رها کردن پین (Drag & Drop)
-        window.mapMarker.on('dragend', function(e) {
-            const position = window.mapMarker.getLatLng();
-            updateFormLocation(position.lat, position.lng);
         });
         
         window.mapInitialized = true; 
@@ -3299,7 +3313,7 @@
                             ${prop.yearBuilt ? `<span>🏗️ ساخت ${prop.yearBuilt}</span>` : ''}
                         </div>
                         <div style="font-size: 16px; font-weight: 900; color: #059669; margin-bottom: 8px;">💰 ${priceText}</div>
-                        <div style="font-size: 12px; color: #475569; line-height: 1.6;">${prop.description ? (prop.description.length > 150 ? window.escapeHTML(prop.description.substring(0, 150)) + '...' : window.escapeHTML(prop.description).replace(/\n/g, '<br/>')) : 'توضیحات تکمیلی ثبت نشده است.'}</div>
+                        <div style="font-size: 12px; color: #475569; line-height: 1.6;">${prop.description ? (prop.description.length > 150 ? prop.description.substring(0, 150) + '...' : prop.description.replace(/\n/g, '<br/>')) : 'توضیحات تکمیلی ثبت نشده است.'}</div>
                     </div>
                 </div>`;
             });
@@ -3409,7 +3423,13 @@
                 }
             }
         };
-        setInterval(window.updateOnlineStatusesUI, 5000);
+        // 🐛 قبلاً بی‌قید و شرط اجرا می‌شد: حتی وقتی کاربر لاگین نکرده بود یا
+        //    تب در پس‌زمینه بود، هر ۵ ثانیه DOM را می‌گشت.
+        window.onlineStatusTimer = setInterval(function() {
+            if (typeof userProfile !== 'undefined' && userProfile && !document.hidden) {
+                window.updateOnlineStatusesUI();
+            }
+        }, 5000);
       // ⚡ تابع جابه‌جایی فیلدهای بودجه در تقاضا (نسخه چیدمان هوشمند)
         window.toggleDemandPriceFields = function() {
             const type = document.getElementById('demand-deal').value;

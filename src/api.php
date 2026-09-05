@@ -350,6 +350,11 @@ if ($method === 'GET' || $action === 'getData') {
             $stmt = $pdo->prepare("SELECT * FROM demands WHERE agencyId = ?"); $stmt->execute([$agencyId]);
             while($row = $stmt->fetch()) {
                 $row['usage'] = $row['usage_type']; unset($row['usage_type']);
+                // 🐛 ستون دیتابیس «description» است ولی فرانت‌اند در دو جا
+                //    «d.desc» می‌خواند (جستجو در خط ۲۷۱۷ و کارت در خط ۲۸۴۸)،
+                //    پس توضیحات تقاضا هرگز نمایش داده نمی‌شد و جستجو هم پیدایش
+                //    نمی‌کرد. هر دو کلید برگردانده می‌شود تا سازگار بماند.
+                $row['desc'] = $row['description'] ?? '';
                 $row['area'] = (int)$row['area']; 
                 $row['budget'] = (float)$row['budget'];
                 $row['deposit'] = (float)($row['deposit'] ?? 0);
