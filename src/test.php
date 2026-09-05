@@ -1,0 +1,1 @@
+<?php echo "Server is working: " . ($_GET['action'] ?? 'No action'); ?>
