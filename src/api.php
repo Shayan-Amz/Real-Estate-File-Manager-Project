@@ -116,7 +116,26 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 
+    // ⚡ هر بار که ساختار دیتابیس عوض شد این عدد را یکی زیاد کن تا
+    //    migration دوباره اجرا شود.
+    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 3);
+
     try {
+        // ⚡ جدول تنظیمات سیستم: مثل rate_limits هیچ‌جا ساخته نمی‌شد، ولی
+        //    markSystemUpdated و getData و پنل مدیریت همه به آن تکیه دارند.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS sys_config (
+            conf_key VARCHAR(64) NOT NULL,
+            conf_val VARCHAR(255) NOT NULL,
+            PRIMARY KEY (conf_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // ⚡ قبلاً در هر ریکوئست یک SHOW TABLES + هشت «SELECT ... LIMIT 1» +
+        //    دو CREATE TABLE اجرا می‌شد (تقریباً ۱۱ کوئری اضافه بر هر درخواست،
+        //    و index.html هر ۱۵ ثانیه درخواست می‌زند). حالا فقط یک SELECT سبک
+        //    است و بقیهٔ بلوک فقط وقتی نسخهٔ ساختار عوض شده باشد اجرا می‌شود.
+        $__sv = $pdo->query("SELECT conf_val FROM sys_config WHERE conf_key = 'schema_version'")->fetchColumn();
+        if ((int) $__sv !== SCHEMA_VERSION) {
+
         // ⚡ این جدول هیچ‌جا ساخته نمی‌شد! فقط DELETE/INSERT/SELECT رویش بود.
         //    روی دیتابیس تازه، همان اولین ریکوئست PDOException می‌گرفت و
         //    کل API با ۵۰۰ «خطا در اتصال به دیتابیس» می‌خوابید.
@@ -169,8 +188,15 @@ try {
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_agency_user (agencyId, username)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        }
-    } catch (Exception $e) { }
+
+            // ⚡ ثبت نسخهٔ ساختار تا این بلوک در ریکوئست‌های بعدی رد شود.
+            //    عمداً داخل «if properties exists» است: اگر دیتابیس خالی بود
+            //    نسخه ثبت نشود تا در اجرای بعدی دوباره تلاش شود.
+            $pdo->prepare("INSERT INTO sys_config (conf_key, conf_val) VALUES ('schema_version', ?) ON DUPLICATE KEY UPDATE conf_val = VALUES(conf_val)")->execute([(string) SCHEMA_VERSION]);
+
+        } // ← پایان «if properties exists»
+        } // ← پایان دروازهٔ نسخهٔ ساختار
+    } catch (Throwable $e) { error_log('[api.php] migration: ' . $e->getMessage()); }
 
     $ip = getRealIp();
     $rateKey = rateLimitKey($ip);
