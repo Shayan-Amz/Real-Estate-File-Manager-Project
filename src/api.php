@@ -80,6 +80,20 @@ try {
             // اطمینان از وجود ستون آخرین بازدید برای سیستم ضربان قلب
             try { $pdo->query("SELECT lastSeen FROM members LIMIT 1"); } 
             catch (PDOException $e) { $pdo->exec("ALTER TABLE members ADD COLUMN lastSeen INT(11) DEFAULT 0"); }
+
+            // ⚡ جدول یادداشت‌های شخصی: قبلاً هیچ‌جا ساخته نمی‌شد و اولین فراخوانی
+            //    getNotes/saveNotes با PDOException و خطای ۵۰۰ می‌مرد.
+            //    کلید UNIQUE برای کارکرد صحیح ON DUPLICATE KEY UPDATE ضروری است؛
+            //    بدون آن هر بار یک ردیف جدید درج می‌شد.
+            $pdo->exec("CREATE TABLE IF NOT EXISTS personal_notes (
+                id INT(11) NOT NULL AUTO_INCREMENT,
+                agencyId VARCHAR(50) NOT NULL,
+                username VARCHAR(191) NOT NULL,
+                note_text MEDIUMTEXT,
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_agency_user (agencyId, username)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
     } catch (Exception $e) { }
 

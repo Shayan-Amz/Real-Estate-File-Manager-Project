@@ -1,9 +1,9 @@
 <?php
 // 🔴 این فایل نباید در دسترس عموم باشد
 define('DB_HOST', 'localhost');             
-define('DB_NAME', 'owihpfoa_test_db'); 
-define('DB_USER', 'owihpfoa_test_db'); 
-define('DB_PASS', 'JY8FLFa48fQmVFbnprAP');  
+define('DB_NAME', 'DATABASE_NAME_HERE'); 
+define('DB_USER', 'DATABASE_NAME_HERE'); 
+define('DB_PASS', 'DATABASE_PASSWORD_HERE');  
 
 // رمز عبور مدیریت کل — به‌صورت هشِ از پیش محاسبه‌شده ذخیره می‌شود.
 // ⚠️ قبلاً اینجا password_hash('ShayanRealState', ...) بود که دو مشکل داشت:
@@ -12,12 +12,12 @@ define('DB_PASS', 'JY8FLFa48fQmVFbnprAP');
 //       bcrypt کامل اجرا می‌شد (≈۵۰ تا ۱۰۰ میلی‌ثانیه اتلاف در هر call)
 // برای تغییر رمز، هش جدید را با این دستور بساز و همین‌جا بگذار:
 //    php -r "echo password_hash('رمز_جدید', PASSWORD_DEFAULT), PHP_EOL;"
-define('MASTER_PASSWORD_HASH', '$2y$10$rascgFXpQL8QgKJqCX2Viuf15qWiT6MCO/8n99cmm4fLD8KO69oDm');
+define('MASTER_PASSWORD_HASH', '$2y$10$REPLACE_WITH_output_of_password_hash');
 
 // ⚡ کلید امضای توکن‌ها — چرخش یافت (قبلاً روی مقدار نمونهٔ README بود).
 // ⚠️ با تغییر این مقدار همهٔ نشست‌های فعال باطل می‌شوند و کاربران باید
 //    دوباره وارد شوند. این انتظار درست است.
-define('APP_SALT', 'f2a944fd7c82a2e4bb967fa160f8fd996c0a49dfabc317ca9e107473d6a96128');
+define('APP_SALT', 'REPLACE_WITH_64_random_hex_chars');
 
 // دامنه سایت خود را اینجا وارد کنید (مثلا https://amlak-e-man.ir) برای تنظیم CORS
 define('ALLOWED_ORIGIN', '*'); 
@@ -36,7 +36,7 @@ define('ALLOWED_ORIGIN', '*');
 define('STT_PROVIDER', 'hf');
 
 // توکن Hugging Face — باید دسترسی «Make calls to Inference Providers» داشته باشد
-define('STT_HF_TOKEN', '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');
+define('STT_HF_TOKEN', 'hf_REPLACE_ME');
 define('STT_MODEL', 'openai/whisper-large-v3');
 
 // در صورت انتخاب 'groq' یا 'openai' اینها را پر کنید
@@ -53,7 +53,7 @@ define('STT_CONNECT_TIMEOUT', 10);            // سقف زمان اتصال (ث�
 // ======================================================================
 // 🧠 مغز جارویس (OpenRouter)
 // ======================================================================
-define('OPENROUTER_API_KEY', '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');
+define('OPENROUTER_API_KEY', 'sk-or-v1-REPLACE_ME');
 define('OPENROUTER_URL', 'https://ai.shayan-api.ir/api/v1/chat/completions');
 define('OPENROUTER_MODEL', 'laguna-xs-2.1:free');
 ?>
