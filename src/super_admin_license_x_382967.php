@@ -40,8 +40,9 @@ if (!isset($_SESSION['master_logged_in'])) {
 }
 
 $action_performed = false;
-if (isset($_GET['delete']) || isset($_GET['extend']) || isset($_GET['change_pass']) || isset($_GET['change_plan'])) {
-    if (!isset($_GET['token']) || !hash_equals($_SESSION['csrf_token'], $_GET['token'])) { die("<h3 style='color:red; text-align:center;'>⛔ خطای امنیتی!</h3>"); }
+$req = $_POST + $_GET;   // 🛡️ تغییر رمز از POST می‌آید، بقیه هنوز از GET
+if (isset($req['delete']) || isset($req['extend']) || isset($req['change_pass']) || isset($req['change_plan'])) {
+    if (!isset($req['token']) || !hash_equals($_SESSION['csrf_token'], (string) $req['token'])) { die("<h3 style='color:red; text-align:center;'>⛔ خطای امنیتی!</h3>"); }
     $action_performed = true;
 }
 
@@ -70,11 +71,17 @@ try {
         }
     }
 
-    if (isset($_GET['change_pass']) && !empty($_GET['new_pass'])) {
-        $id = preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['change_pass']);
-        $newPass = password_hash($_GET['new_pass'], PASSWORD_DEFAULT);
-        $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?")->execute([$newPass, $id]);
-        $msg = "🔑 رمز عبور تغییر کرد!";
+    // 🛡️ تغییر رمز فقط با POST. قبلاً رمز در کوئری‌استرینگ بود و در
+    //    لاگ آپاچی، تاریخچهٔ مرورگر و هدر Referer جا می‌ماند.
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_pass']) && !empty($_POST['new_pass'])) {
+        $id = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['change_pass']);
+        $newPass = (string) $_POST['new_pass'];
+        if (strlen($newPass) < 6) {
+            $msg = "⚠️ رمز باید حداقل ۶ کاراکتر باشد.";
+        } else {
+            $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?")->execute([password_hash($newPass, PASSWORD_DEFAULT), $id]);
+            $msg = "🔑 رمز عبور تغییر کرد!";
+        }
     }
 
     // ⚡ دکمه تغییر پلن
@@ -120,7 +127,17 @@ try {
     </style>
     <script>
         const csrfToken = "<?= $csrf ?>";
-        function changePass(id, name) { let newPass = prompt("رمز جدید برای (" + name + "):"); if (newPass) { window.location.href = "?change_pass=" + encodeURIComponent(id) + "&new_pass=" + encodeURIComponent(newPass.trim()) + "&token=" + csrfToken; } }
+        function changePass(id, name) {
+            const newPass = prompt("رمز جدید برای (" + name + ") — حداقل ۶ کاراکتر:");
+            if (!newPass) return;
+            // 🛡️ ارسال با POST تا رمز در آدرس/لاگ/تاریخچه نیفتد
+            const f = document.createElement('form');
+            f.method = 'POST'; f.action = window.location.pathname;
+            [['change_pass', id], ['new_pass', newPass.trim()], ['token', csrfToken]].forEach(([k, v]) => {
+                const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i);
+            });
+            document.body.appendChild(f); f.submit();
+        }
         function confirmDelete(url) { if(confirm('حذف کامل آژانس؟ این عمل غیرقابل بازگشت است!')) { window.location.href = url; } return false; }
     </script>
 </head>

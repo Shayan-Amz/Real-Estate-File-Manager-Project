@@ -16,7 +16,23 @@ require_once 'config.php';
 require_once __DIR__ . '/stt.php';   // 🎙️ موتور تبدیل گفتار به متن (جارویس)
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: ' . ALLOWED_ORIGIN);
+// 🛡️ CORS: قبلاً '*' بود، یعنی هر سایتی می‌توانست به این API درخواست بدهد.
+//    ALLOWED_ORIGIN = ''             → فقط Origin هم‌دامنه با خودِ سرور (پیش‌فرض امن)
+//    ALLOWED_ORIGIN = 'a.ir, b.ir'   → فقط همین دامنه‌ها
+//    ALLOWED_ORIGIN = '*'            → همه (توصیه نمی‌شود)
+$__acao = '';
+$__origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (ALLOWED_ORIGIN === '*') {
+    $__acao = '*';
+} elseif (trim(ALLOWED_ORIGIN) !== '') {
+    foreach (array_map('trim', explode(',', ALLOWED_ORIGIN)) as $__o) {
+        if ($__o !== '' && strcasecmp(rtrim($__o, '/'), rtrim($__origin, '/')) === 0) { $__acao = $__origin; break; }
+    }
+} elseif ($__origin !== '') {
+    $__srvHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    if (strcasecmp((string) parse_url($__origin, PHP_URL_HOST), $__srvHost) === 0) { $__acao = $__origin; }
+}
+if ($__acao !== '') { header('Access-Control-Allow-Origin: ' . $__acao); header('Vary: Origin'); }
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.google.com;");
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Agency-ID, X-User-Role, X-Auth-Token, X-User-Name, X-Data-Hash, X-API-Key');
@@ -27,10 +43,57 @@ $uploadDir = 'uploads/';
 if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
 if (!file_exists($uploadDir . 'index.php')) { file_put_contents($uploadDir . 'index.php', '<?php // Silence is golden. ?>'); }
 
+if (!defined('TRUST_PROXY_HEADER')) define('TRUST_PROXY_HEADER', false);
+
+/**
+ * 🛡️ آی‌پی واقعی کلاینت.
+ * قبلاً X-Forwarded-For بدون هیچ بررسی‌ای قبول می‌شد؛ یعنی هر کسی می‌توانست
+ * با فرستادن یک هدر جعلی، محدودیت نرخ را کاملاً دور بزند.
+ * حالا فقط وقتی به هدرهای forwarding اعتماد می‌شود که TRUST_PROXY_HEADER
+ * در config.php روی true باشد (یعنی سرور واقعاً پشت Cloudflare/پروکسی است).
+ */
 function getRealIp() {
-    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) return $_SERVER['HTTP_CF_CONNECTING_IP'];
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) { $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']); return trim($ips[0]); }
-    return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $remote = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if (!TRUST_PROXY_HEADER) return $remote;
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP']) && filter_var($_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP)) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ips = array_map('trim', explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
+        if (!empty($ips[0]) && filter_var($ips[0], FILTER_VALIDATE_IP)) return $ips[0];
+    }
+    return $remote;
+}
+
+/**
+ * 🛡️ کلید محدودیت نرخ.
+ * قبلاً فقط آی‌پی بود و دو مشکل داشت: همهٔ کاربران پشت یک NAT با هم قفل
+ * می‌شدند، و با هدر جعلی قابل دور زدن بود. حالا آی‌پی + آژانس + توکن کاربر
+ * با هم هش می‌شوند. طول ۱۵ کاراکتر تا در ستون ip با هر طولی جا شود.
+ */
+function rateLimitKey($ip) {
+    $extra = ($_SERVER['HTTP_X_AGENCY_ID'] ?? '') . '|' . ($_SERVER['HTTP_X_AUTH_TOKEN'] ?? '');
+    return substr(hash('sha256', $ip . '|' . $extra), 0, 15);
+}
+
+/**
+ * 🛡️ فقط مسیرهای واقعاً داخل پوشهٔ uploads را قبول می‌کند.
+ * خروجی: همان مسیر نسبی (مثل uploads/prop_x.jpg) یا null.
+ * این جلوی «پاک کردن فایل دلخواه» را می‌گیرد: رشته‌ای مثل
+ * uploads/../../config.php قبلاً هم ذخیره می‌شد و هم به unlink می‌رسید.
+ */
+function safeUploadRelPath($p) {
+    if (!is_string($p)) return null;
+    $p = trim($p);
+    // ⚠️ عمداً کلاس کاراکتر سخت‌گیرانه (فقط a-z0-9_-) نگذاشتم: agencyId از
+    //    ورودی کاربر می‌آید و هیچ‌جا اعتبارسنجی نمی‌شود، پس ممکن است فارسی یا
+    //    فاصله داشته باشد و مسیر عکس‌های مشروع رد می‌شد.
+    //    در عوض «/»، «\» و کاراکترهای کنترلی ممنوع‌اند — پس پیمایش به بالا
+    //    اصولاً ممکن نیست — و پسوند هم باید دقیقاً در انتهای رشته یک عکس باشد.
+    if (!preg_match('#^uploads/([^/\\\\\x00-\x1f]{1,200}\.(?:jpg|jpeg|png|webp|gif))$#i', $p, $m)) return null;
+    $name = $m[1];
+    if ($name === '' || $name[0] === '.' || strpos($name, '..') !== false) return null;
+    return $p;
 }
 
 function sanitizeInput($data) {
@@ -54,6 +117,18 @@ try {
     ]);
 
     try {
+        // ⚡ این جدول هیچ‌جا ساخته نمی‌شد! فقط DELETE/INSERT/SELECT رویش بود.
+        //    روی دیتابیس تازه، همان اولین ریکوئست PDOException می‌گرفت و
+        //    کل API با ۵۰۰ «خطا در اتصال به دیتابیس» می‌خوابید.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS rate_limits (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            ip VARCHAR(64) NOT NULL,
+            request_time INT(11) NOT NULL,
+            PRIMARY KEY (id),
+            KEY idx_ip (ip),
+            KEY idx_time (request_time)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         $stmtCheck = $pdo->query("SHOW TABLES LIKE 'properties'");
         if ($stmtCheck->rowCount() > 0) {
             try { $pdo->query("SELECT showImagesGuest FROM properties LIMIT 1"); } 
@@ -98,13 +173,26 @@ try {
     } catch (Exception $e) { }
 
     $ip = getRealIp();
+    $rateKey = rateLimitKey($ip);
     $now = time();
-    $pdo->exec("DELETE FROM rate_limits WHERE request_time < " . ($now - 60));
-    $pdo->prepare("INSERT INTO rate_limits (ip, request_time) VALUES (?, ?)")->execute([$ip, $now]);
-    
-    $stmtCnt = $pdo->prepare("SELECT COUNT(*) FROM rate_limits WHERE ip = ?");
-    $stmtCnt->execute([$ip]);
-    if ($stmtCnt->fetchColumn() > 150) { http_response_code(429); echo json_encode(['error' => 'سیستم ضد ربات فعال شد.']); exit; }
+    // 🛡️ محدودیت نرخ داخل try/c riêng است: اگر جدول rate_limits خراب یا
+    //    ستون ip کوتاه‌تر از حد انتظار بود، نباید کل API با ۵۰۰ بخوابد.
+    //    در آن حالت fail-open می‌شویم (سایت کار می‌کند، فقط بدون محدودیت نرخ)
+    //    و خطا در error_log ثبت می‌شود.
+    try {
+        // ⚡ پاک‌سازی سطرهای قدیمی دیگر در هر ریکوئست اجرا نمی‌شود (۱ از ۲۰)؛
+        //    قبلاً روی هر درخواست یک DELETE تمام‌جدولی می‌خورد.
+        if (random_int(1, 20) === 1) {
+            $pdo->prepare("DELETE FROM rate_limits WHERE request_time < ?")->execute([$now - 300]);
+        }
+        $pdo->prepare("INSERT INTO rate_limits (ip, request_time) VALUES (?, ?)")->execute([$rateKey, $now]);
+
+        $stmtCnt = $pdo->prepare("SELECT COUNT(*) FROM rate_limits WHERE ip = ? AND request_time > ?");
+        $stmtCnt->execute([$rateKey, $now - 60]);
+        if ($stmtCnt->fetchColumn() > 150) { http_response_code(429); echo json_encode(['error' => 'سیستم ضد ربات فعال شد.']); exit; }
+    } catch (PDOException $e) {
+        error_log('[api.php] rate_limits ناموفق بود (محدودیت نرخ غیرفعال): ' . $e->getMessage());
+    }
 
 } catch(PDOException $e) { http_response_code(500); echo json_encode(['error' => 'خطا در اتصال به دیتابیس.']); exit; }
 
@@ -583,7 +671,7 @@ if ($method === 'POST') {
 
             $imagePaths = [];
             $uploadDir = __DIR__ . '/uploads/';
-            if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
+            if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
 
             if (!empty($input['images']) && is_array($input['images'])) {
                 foreach ($input['images'] as $index => $base64OrUrl) {
@@ -619,7 +707,10 @@ if ($method === 'POST') {
                             }
                         }
                     } else {
-                        $imagePaths[] = $base64OrUrl;
+                        // 🛡️ قبلاً هر رشته‌ای بی‌بررسی در دیتابیس ذخیره می‌شد و
+                        //    بعداً در deleteProperty به unlink می‌رسید.
+                        $safe = safeUploadRelPath($base64OrUrl);
+                        if ($safe !== null) $imagePaths[] = $safe;
                     }
                 }
             }
@@ -670,10 +761,16 @@ if ($method === 'POST') {
                 if ($prop && !empty($prop['images'])) {
                     $imgs = json_decode($prop['images'], true);
                     if (is_array($imgs)) {
+                        // 🛡️ بررسی دوم: حتی اگر رشتهٔ آلوده از قبل در دیتابیس باشد،
+                        //    realpath باید واقعاً داخل uploads/ حل شود.
+                        $uploadsRoot = realpath(__DIR__ . '/uploads');
+                        $uploadsRoot = $uploadsRoot === false ? null : $uploadsRoot . DIRECTORY_SEPARATOR;
                         foreach ($imgs as $img) {
-                            if (strpos($img, 'uploads/') === 0 && file_exists(__DIR__ . '/' . $img)) {
-                                unlink(__DIR__ . '/' . $img); 
-                            }
+                            $safe = safeUploadRelPath($img);
+                            if ($safe === null || $uploadsRoot === null) continue;
+                            $abs = realpath(__DIR__ . '/' . $safe);
+                            if ($abs === false || strpos($abs, $uploadsRoot) !== 0) continue;
+                            if (is_file($abs)) { @unlink($abs); }
                         }
                     }
                 }
@@ -683,8 +780,11 @@ if ($method === 'POST') {
         }
         
     } catch (PDOException $e) {
-        http_response_code(500); 
-        echo json_encode(['error' => 'خطای پایگاه داده: ' . $e->getMessage()]); 
+        // 🛡️ پیام خام PDOException نام جدول‌ها، ستون‌ها و گاهی مسیر فایل را
+        //    به کلاینت لو می‌داد. جزئیات فقط در error_log سرور می‌رود.
+        error_log('[api.php] PDOException: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'خطای داخلی سرور. لطفاً دوباره تلاش کنید.']);
         exit;
     }
 }
