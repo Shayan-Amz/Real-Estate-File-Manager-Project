@@ -605,6 +605,21 @@ if ($method === 'POST') {
 
         if ($action === 'saveAgency') {
             if (!password_verify($input['masterPass'] ?? '', MASTER_PASSWORD_HASH)) { echo json_encode(['error' => 'رمز مالک اشتباه است.']); exit; }
+
+            // 🛡️ شناسهٔ آژانس هیچ‌جا اعتبارسنجی نمی‌شد، در حالی که مستقیم در
+            //    نام فایل عکس‌ها (uploads/prop_<agencyId>_...) و در کوئری‌ها
+            //    استفاده می‌شود. حالا برای «آژانس تازه» محدود به کاراکترهای
+            //    امن است. آژانس‌های قدیمی با شناسهٔ دلخواه دست‌نخورده می‌مانند
+            //    تا کسی از سیستم بیرون نیفتد.
+            $newAgencyId = trim((string)($input['id'] ?? ''));
+            $__ex = $pdo->prepare("SELECT id FROM agencies WHERE id = ?");
+            $__ex->execute([$newAgencyId]);
+            if (!$__ex->fetchColumn()) {
+                if (!preg_match('/^[A-Za-z0-9_\-]{3,50}$/', $newAgencyId)) {
+                    echo json_encode(['error' => 'کد آژانس باید ۳ تا ۵۰ کاراکتر و فقط شامل حروف انگلیسی، رقم، خط تیره (-) یا زیرخط (_) باشد.']);
+                    exit;
+                }
+            }
             $hashed = !empty($input['adminPin']) ? password_hash($input['adminPin'], PASSWORD_BCRYPT) : '';
             
             $rawDate = $input['expireAt'] ?? '';

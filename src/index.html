@@ -1169,7 +1169,7 @@
 
                 <!-- تب ثبت تقاضا (جدید) -->
                 <div id="add-demand-view" class="fade-in hidden form-card">
-                    <h2 class="form-title" style="margin: 0 0 20px 0; border-bottom: 1px solid var(--border); padding-bottom: 12px; font-size: 18px; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 8px;"><span>➕📝</span> ثبت تقاضای جدید مشتری</h2>
+                    <h2 class="form-title" style="margin: 0 0 20px 0; border-bottom: 1px solid var(--border); padding-bottom: 12px; font-size: 18px; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 8px;" id="demand-form-title"><span>➕📝</span> ثبت تقاضای جدید مشتری</h2>
                     <form id="demand-form" onsubmit="handleDemandSubmit(event)">
                         <div class="grid-2">
                             <div class="form-group"><input required type="text" id="demand-name" placeholder="نام مشتری" /></div>
@@ -1213,6 +1213,7 @@
                         <div class="form-group"><textarea id="demand-desc" rows="2" placeholder="امکانات خاص (مثل پارکینگ، آسانسور)..."></textarea></div>
                         <div class="form-group"><label>📅 یادآور پیگیری (اختیاری)</label><input data-jdp type="text" id="demand-followup" placeholder="انتخاب تاریخ تقویم..." autocomplete="off" /></div>
                         <button type="submit" id="btn-submit-demand" class="btn-modern" style="margin-top: 10px;">✅ ثبت تقاضا</button>
+                        <button type="button" id="btn-cancel-demand-edit" onclick="cancelDemandEdit()" class="btn-modern btn-modern-outline hidden" style="width: 100%; margin-top: 12px;">انصراف از ویرایش</button>
                     </form>
                 </div>
 
@@ -1476,6 +1477,7 @@
         let properties = [], demands = [], membersList = [];
         let allAgencies = [], allGuestProperties = [], selectedAgencyIdForGuest = null;
         let editingId = null, tempImagesBase64 = []; 
+        let editingDemandId = null;   // ✏️ شناسهٔ تقاضایی که در حال ویرایش است
         let currentGalleryImages = [], currentGalleryIndex = 0;
         let mapInitialized = false, leafletMap = null, mapMarker = null;
         let mainMapInitialized = false, mainLeafletMap = null, mainMapMarkers = [];
@@ -2701,7 +2703,38 @@
                 window.showToast("خطا در حذف یادآور");
             }
         };
-        window.handleDemandSubmit = async function(e) { e.preventDefault(); const p1 = document.getElementById('demand-phone').value, p2 = document.getElementById('demand-phone2').value; if (p1 && !/^0\d{10}$/.test(p1)) return window.showToast("❌ شماره اصلی نامعتبر"); if (p2 && !/^0\d{10}$/.test(p2)) return window.showToast("❌ شماره دوم نامعتبر"); const btn = document.getElementById('btn-submit-demand'); btn.disabled = true; btn.innerText = "در حال ثبت..."; try { await apiCall('saveDemand', { id: 'dem_' + Date.now(), agencyId: userProfile.agencyId, authorName: userProfile.name, clientName: document.getElementById('demand-name').value, clientPhone: p1, clientPhone2: p2, usage: document.getElementById('demand-usage').value, dealType: document.getElementById('demand-deal').value, city: document.getElementById('demand-city').value, area: Number(document.getElementById('demand-area').value), budget: Number((document.getElementById('demand-budget').value || '').replace(/,/g, '')) || 0, deposit: Number((document.getElementById('demand-deposit').value || '').replace(/,/g, '')) || 0, rent: Number((document.getElementById('demand-rent').value || '').replace(/,/g, '')) || 0, desc: document.getElementById('demand-desc').value, followUpDate: document.getElementById('demand-followup').value, date: new Date().toISOString() }); document.getElementById('demand-form').reset(); document.getElementById('demand-budget-text').innerText = '0'; window.showToast("تقاضا ثبت شد");window.switchTab('demands'); fetchAllData(); } catch(e){ window.showToast("خطا در ثبت تقاضا"); } finally { btn.disabled = false; btn.innerText = "✅ ثبت تقاضا"; } };
+        // ✏️ ویرایش تقاضا — قبلاً هیچ راهی برای ویرایش وجود نداشت و هر بار
+        //    ثبت، یک تقاضای تازه با id جدید می‌ساخت (id: 'dem_' + Date.now()).
+        window.editDemand = function(id) {
+            const d = demands.find(x => x.id === id);
+            if (!d) { window.showToast('تقاضا پیدا نشد'); return; }
+            editingDemandId = id;
+            const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = (v === null || v === undefined) ? '' : v; };
+            set('demand-name', d.clientName); set('demand-phone', d.clientPhone); set('demand-phone2', d.clientPhone2);
+            set('demand-city', d.city); set('demand-area', d.area);
+            set('demand-desc', d.description !== undefined ? d.description : (d.desc || ''));
+            const us = document.getElementById('demand-usage'); if (us) us.value = d.usage || '';
+            const dl = document.getElementById('demand-deal');  if (dl) dl.value = d.dealType || '';
+            if (typeof window.toggleDemandPriceFields === 'function') window.toggleDemandPriceFields();
+            set('demand-budget', d.budget || 0); set('demand-deposit', d.deposit || 0); set('demand-rent', d.rent || 0);
+            set('demand-followup', d.followUpDate || '');
+            const t = document.getElementById('demand-form-title');
+            if (t) t.innerHTML = '<span>✏️</span> ویرایش تقاضای ' + (d.clientName || '');
+            const b = document.getElementById('btn-submit-demand'); if (b) b.innerText = '💾 ذخیرهٔ تغییرات';
+            const c = document.getElementById('btn-cancel-demand-edit'); if (c) c.classList.remove('hidden');
+            window.switchTab('add-demand');
+        };
+
+        window.cancelDemandEdit = function() {
+            editingDemandId = null;
+            const f = document.getElementById('demand-form'); if (f) f.reset();
+            const t = document.getElementById('demand-form-title'); if (t) t.innerHTML = '<span>➕📝</span> ثبت تقاضای جدید مشتری';
+            const b = document.getElementById('btn-submit-demand'); if (b) b.innerText = '✅ ثبت تقاضا';
+            const c = document.getElementById('btn-cancel-demand-edit'); if (c) c.classList.add('hidden');
+            if (typeof window.toggleDemandPriceFields === 'function') window.toggleDemandPriceFields();
+        };
+
+        window.handleDemandSubmit = async function(e) { e.preventDefault(); const p1 = document.getElementById('demand-phone').value, p2 = document.getElementById('demand-phone2').value; if (p1 && !/^0\d{10}$/.test(p1)) return window.showToast("❌ شماره اصلی نامعتبر"); if (p2 && !/^0\d{10}$/.test(p2)) return window.showToast("❌ شماره دوم نامعتبر"); const btn = document.getElementById('btn-submit-demand'); btn.disabled = true; btn.innerText = "در حال ثبت..."; try { await apiCall('saveDemand', { id: editingDemandId || ('dem_' + Date.now()), agencyId: userProfile.agencyId, authorName: userProfile.name, clientName: document.getElementById('demand-name').value, clientPhone: p1, clientPhone2: p2, usage: document.getElementById('demand-usage').value, dealType: document.getElementById('demand-deal').value, city: document.getElementById('demand-city').value, area: Number(document.getElementById('demand-area').value), budget: Number((document.getElementById('demand-budget').value || '').replace(/,/g, '')) || 0, deposit: Number((document.getElementById('demand-deposit').value || '').replace(/,/g, '')) || 0, rent: Number((document.getElementById('demand-rent').value || '').replace(/,/g, '')) || 0, desc: document.getElementById('demand-desc').value, followUpDate: document.getElementById('demand-followup').value, date: new Date().toISOString() }); document.getElementById('demand-form').reset(); document.getElementById('demand-budget-text').innerText = '0'; const wasEdit = !!editingDemandId; window.cancelDemandEdit(); window.showToast(wasEdit ? "تغییرات ذخیره شد ✅" : "تقاضا ثبت شد");window.switchTab('demands'); fetchAllData(); } catch(e){ window.showToast("خطا در ثبت تقاضا"); } finally { btn.disabled = false; btn.innerText = "✅ ثبت تقاضا"; } };
         
         window.showDeleteModal = function(id, type='property') { demandDeleteId = id; deleteType = type; document.getElementById('delete-modal').classList.remove('hidden'); };
         window.cancelDelete = function() { demandDeleteId = null; document.getElementById('delete-modal').classList.add('hidden'); };
@@ -2862,7 +2895,7 @@
                 }
 
                 // ⚡ در خط زیر استایل بخش فوتر کارت (card-author) اصلاح شد تا تاریخ ثبت به صورت متقارن در سمت چپ قرار بگیرد
-                htmlStr += `<div class="property-card fade-in"><div class="card-header" style="display:flex; align-items:center;"><span class="tag tag-demand">تقاضای مشتری</span>${matchBadge}${userProfile.role === 'مدیر' ? `<button onclick="showDeleteModal('${d.id}', 'demand')" class="action-btn delete" style="background:transparent; border:none; box-shadow:none;">🗑️</button>` : ''}</div><div class="card-body"><h3 class="card-title" style="font-size:20px;">👤 ${d.clientName} <div style="display:flex;">${callButtons}</div></h3><div style="font-size: 15px; font-weight: 900; margin-bottom: 16px; line-height:1.8; color:var(--text-main);">نیاز: ${d.dealType} ${d.usage} حدود ${d.area} متر در ${d.city}${budgetHtml}</div>${d.desc ? `<div class="card-desc" style="margin-bottom: 0;"><b>توضیحات:</b> ${d.desc}</div>` : ''}${followUpHtml}<div class="card-author" style="margin-top: 20px; border-top: 2px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;"><div>ثبت کننده: <b style="color:var(--primary); font-size:14px;">${d.authorName}</b></div><div style="color: var(--text-muted); font-size:13px; font-weight:bold;">📅 ثبت: ${regDateShamsi}</div></div>${matchDetails}</div></div>`;
+                htmlStr += `<div class="property-card fade-in"><div class="card-header" style="display:flex; align-items:center;"><span class="tag tag-demand">تقاضای مشتری</span>${matchBadge}${userProfile.role === 'مدیر' ? `<button onclick="editDemand('${d.id}')" class="action-btn" title="ویرایش تقاضا" style="background:transparent; border:none; box-shadow:none;">✏️</button><button onclick="showDeleteModal('${d.id}', 'demand')" class="action-btn delete" style="background:transparent; border:none; box-shadow:none;">🗑️</button>` : ''}</div><div class="card-body"><h3 class="card-title" style="font-size:20px;">👤 ${d.clientName} <div style="display:flex;">${callButtons}</div></h3><div style="font-size: 15px; font-weight: 900; margin-bottom: 16px; line-height:1.8; color:var(--text-main);">نیاز: ${d.dealType} ${d.usage} حدود ${d.area} متر در ${d.city}${budgetHtml}</div>${d.desc ? `<div class="card-desc" style="margin-bottom: 0;"><b>توضیحات:</b> ${d.desc}</div>` : ''}${followUpHtml}<div class="card-author" style="margin-top: 20px; border-top: 2px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;"><div>ثبت کننده: <b style="color:var(--primary); font-size:14px;">${d.authorName}</b></div><div style="color: var(--text-muted); font-size:13px; font-weight:bold;">📅 ثبت: ${regDateShamsi}</div></div>${matchDetails}</div></div>`;
             });
             container.innerHTML = htmlStr; 
 
