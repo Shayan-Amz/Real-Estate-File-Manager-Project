@@ -563,8 +563,15 @@ if ($method === 'POST') {
             //    امتحان می‌کند اگر اولی نرخ‌خور یا در دسترس نبود.
             //    نکته: شناسهٔ مدل در OpenRouter حتماً «ارائه‌دهنده/مدل» است؛
             //    مقدار قبلی «laguna-xs-2.1:free» پیشوند نداشت و نامعتبر بود.
+            $cfgModel = (defined('OPENROUTER_MODEL') && trim(OPENROUTER_MODEL) !== '') ? trim(OPENROUTER_MODEL) : '';
+            // شناسهٔ بدون «/» نامعتبر است و اگر داخل آرایهٔ models برود ممکن است
+            // کل درخواست ۴۰۰ شود — پس ردش می‌کنیم و به لاگ می‌نویسیم.
+            if ($cfgModel !== '' && strpos($cfgModel, '/') === false) {
+                error_log('[Jarvis] OPENROUTER_MODEL نامعتبر نادیده گرفته شد: ' . $cfgModel);
+                $cfgModel = '';
+            }
             $jarvisModels = array_values(array_unique(array_filter([
-                (defined('OPENROUTER_MODEL') && trim(OPENROUTER_MODEL) !== '') ? trim(OPENROUTER_MODEL) : null,
+                $cfgModel !== '' ? $cfgModel : null,
                 'google/gemma-4-26b-a4b-it:free',
                 'poolside/laguna-xs-2.1:free',
             ])));
