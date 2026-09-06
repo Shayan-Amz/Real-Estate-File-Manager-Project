@@ -466,7 +466,6 @@ else ok('jarvis', 'OPENROUTER_MODEL = ' . $orModel);
 // ── تست واقعی: یک درخواست کوچک به هر دو آدرس ──
 if ($orKey !== '' && strpos($orKey, 'REPLACE') === false && extension_loaded('curl')) {
     echo "   (یک درخواست آزمایشی کوچک زده می‌شود — چند ثانیه صبر کن)\n";
-    $probeModel = (strpos($orModel, '/') !== false) ? $orModel : 'google/gemma-4-26b-a4b-it:free';
     $targets = array_values(array_unique(array_filter([$orUrl, $OFFICIAL])));
     $results = [];
     foreach ($targets as $t) {
@@ -477,20 +476,13 @@ if ($orKey !== '' && strpos($orKey, 'REPLACE') === false && extension_loaded('cu
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
         curl_setopt($ch, CURLOPT_TIMEOUT, 45);
-        // ⚡ دقیقاً همان ساختاری که api.php می‌فرستد: آرایهٔ مدل‌ها +
-        //    allow_fallbacks. وگرنه تست یک مدل را می‌زد و نتیجه‌اش با رفتار
-        //    واقعی جارویس فرق می‌کرد.
-        $probeModels = array_values(array_unique(array_filter([
-            (strpos($orModel, '/') !== false) ? $orModel : null,
-            'google/gemma-4-26b-a4b-it:free',
-            'google/gemma-4-31b-it:free',
-            'qwen/qwen3-next-80b-a3b-instruct:free',
-            'meta-llama/llama-3.3-70b-instruct:free',
-            'openai/gpt-oss-20b:free',
-        ])));
+        // ⚡ دقیقاً همان ساختاری که api.php می‌فرستد: یک مدل، بدون آرایهٔ
+        //    جایگزین. مهم: اگر OPENROUTER_MODEL خراب باشد، اینجا هم باید همان
+        //    مدل خراب فرستاده شود و خطا بگیرد. اگر سراغ مدل پیش‌فرض برویم،
+        //    تست سبز می‌شود در حالی که جارویس واقعی خراب است.
+        $probeModel = ($orModel !== '') ? $orModel : 'google/gemma-4-26b-a4b-it:free';
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            'model'    => $probeModels[0],
-            'models'   => $probeModels,
+            'model'    => $probeModel,
             'provider' => ['allow_fallbacks' => true],
             'messages' => [['role' => 'user', 'content' => 'ok']],
             'max_tokens' => 1,

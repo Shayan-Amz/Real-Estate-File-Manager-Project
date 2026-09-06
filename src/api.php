@@ -570,29 +570,14 @@ if ($method === 'POST') {
                 error_log('[Jarvis] OPENROUTER_MODEL نامعتبر نادیده گرفته شد: ' . $cfgModel);
                 $cfgModel = '';
             }
-            // 🛡️ چند مدل پشت‌سرهم. طبق راهنمای رسمی OpenRouter، اگر ارائه‌دهندهٔ
-            //    مدل اول rate-limited باشد (همان خطای «temporarily rate-limited
-            //    upstream» که می‌گیری)، خودش مدل بعدی لیست را امتحان می‌کند.
-            //    ترتیب عمدی است: اول مدل‌های چندزبانه که فارسی را خوب می‌فهمند
-            //    و JSON تمیز می‌دهند، نه مدل‌های مخصوص کدنویسی.
-            // 🎯 انتخاب خودت (OPENROUTER_MODEL) اولویت دارد — اما فقط اگر
-            //    یکی از مدل‌های سالمِ شناخته‌شده باشد. اگر روی یک مدل منسوخ
-            //    مانده باشد، به آخر منتقل می‌شود تا هر بار یک درخواست با
-            //    ۴۰۰ هدر نرود (سقف رایگان فقط ۵۰ درخواست در روز است).
-            $jarvisKnownGood = [
-                'google/gemma-4-26b-a4b-it:free',            // چندزبانه، ۲۶۲K
-                'google/gemma-4-31b-it:free',                // نسخهٔ قوی‌تر، ۱۴۰+ زبان
-                'qwen/qwen3-next-80b-a3b-instruct:free',     // قوی در استخراج ساختاریافته
-                'meta-llama/llama-3.3-70b-instruct:free',    // چندزبانه، پایدار
-                'openai/gpt-oss-20b:free',                   // سبک، برای وقتی بقیه شلوغ‌اند
-            ];
-            if ($cfgModel !== '' && in_array($cfgModel, $jarvisKnownGood, true)) {
-                array_unshift($jarvisKnownGood, $cfgModel);   // انتخاب تو اول
-            } elseif ($cfgModel !== '') {
-                $jarvisKnownGood[] = $cfgModel;               // ناشناخته → fallback
-                error_log('[Jarvis] OPENROUTER_MODEL=' . $cfgModel . ' در لیست مدل‌های سالم نیست؛ به fallback منتقل شد.');
+            // 🎯 فقط یک مدل: همان که خودت در OPENROUTER_MODEL گذاشته‌ای.
+            //    (طبق درخواست، لیست جایگزین حذف شد. اگر این مدل منسوخ یا
+            //    شلوغ شود جارویس کار نمی‌کند و باید مقدار config.php عوض شود.)
+            $jarvisModel = ($cfgModel !== '') ? $cfgModel : 'google/gemma-4-26b-a4b-it:free';
+            if (strpos($jarvisModel, '/') === false) {
+                // شناسهٔ بدون پیشوند ارائه‌دهنده معتبر نیست (مثل laguna-xs-2.1:free)
+                error_log('[Jarvis] OPENROUTER_MODEL پیشوند ارائه‌دهنده ندارد: ' . $jarvisModel);
             }
-            $jarvisModels = array_values(array_unique(array_filter($jarvisKnownGood)));
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
             $systemPrompt = 'شما "جارویس" هستید، دستیار فوق‌هوشمند املاک. 
@@ -649,8 +634,7 @@ if ($method === 'POST') {
 }';
 
             $data = [
-                "model"  => $jarvisModels[0],
-                "models" => $jarvisModels,   // ⚡ اگر اولی نرخ‌خور/نبود، خود OpenRouter بعدی را می‌زند
+                "model"  => $jarvisModel,
                 // ⚡ لایهٔ ارائه‌دهنده: اگر یک upstream شلوغ بود، همان مدل را روی
                 //    یک ارائه‌دهندهٔ دیگر امتحان کند. پیش‌فرض روشن است ولی صریح
                 //    می‌گذاریم تا به تنظیمات اکانت وابسته نباشد.
@@ -668,16 +652,12 @@ if ($method === 'POST') {
             //    همان مدل اول (از config.php) فرستاده می‌شد و اگر نامعتبر بود
             //    ۴۰۰ می‌گرفتیم و تمام — آرایهٔ models نجاتش نمی‌داد چون ۴۰۰
             //    خطای اعتبارسنجی است و قبل از routing رخ می‌دهد.
-            $maxAttempts   = 3;      // سقف تلاش، تا سهمیهٔ روزانهٔ رایگان نسوزد
+            $maxAttempts   = 2;      // یک تلاش + یک تلاش بدون response_format
             $attempt       = 0;
             $useJsonFormat = true;   // بعد از اولین ۴۰۰ خاموش می‌شود
             foreach ($jarvisEndpoints as $ep) {
-              foreach ($jarvisModels as $mi => $modelName) {
-                if ($attempt >= $maxAttempts) break 2;
+                if ($attempt >= $maxAttempts) break;
                 $attempt++;
-
-                $data['model']  = $modelName;
-                $data['models'] = array_slice($jarvisModels, $mi);  // بقیه به‌عنوان fallback سمت OpenRouter
                 if (!$useJsonFormat) { unset($data['response_format']); }
 
                 $ch = curl_init($ep);
@@ -702,18 +682,15 @@ if ($method === 'POST') {
                 $ce = curl_error($ch);   // ⚡ باید قبل از curl_close خوانده شود؛ قبلاً بعد از آن خوانده می‌شد و همیشه خالی بود
                 curl_close($ch);
 
-                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . '/' . $modelName . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
-                $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep; $usedModel = $modelName;
+                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
+                $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep; $usedModel = $jarvisModel;
 
-                if ($hc === 200) break 2;                 // موفق
-                // ۴۰۱/۴۰۲ سطح «اکانت» هستند؛ مدل یا آدرس دیگر کمکی نمی‌کند
+                if ($hc === 200) break;                 // موفق
+                // ۴۰۱/۴۰۲ سطح «اکانت» هستند؛ آدرس دیگر کمکی نمی‌کند
                 // و فقط یک سهمیهٔ دیگر از سقف روزانه هدر می‌دهد.
-                if (in_array($hc, [401, 402], true)) break 2;
+                if (in_array($hc, [401, 402], true)) break;
                 // ۴۰۰ ممکن است از response_format باشد؛ یک بار بدون آن امتحان می‌کنیم
                 if ($hc === 400 && $useJsonFormat) { $useJsonFormat = false; }
-                // ۴۰۰/۴۰۴ → مدل نامعتبر است؛ ۴۲۹ → آن مدل شلوغ است.
-                // هر دو یعنی «مدل بعدی» — حلقه ادامه می‌یابد.
-              }
             }
             // 🛡️ جزئیات هر تلاش در لاگ سرور
             error_log('[Jarvis] ' . implode(' | ', $attemptLog));
