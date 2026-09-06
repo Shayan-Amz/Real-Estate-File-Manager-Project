@@ -43,6 +43,31 @@ $uploadDir = 'uploads/';
 if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
 if (!file_exists($uploadDir . 'index.php')) { file_put_contents($uploadDir . 'index.php', '<?php // Silence is golden. ?>'); }
 
+// 🛡️ خودترمیمی: اگر uploads/.htaccess گم شده باشد (مثلاً هنگام Extract زیپ
+//    فایل‌های نقطه‌دار جا مانده‌اند)، همین‌جا ساخته می‌شود تا اجرای اسکریپت در
+//    پوشهٔ عکس‌ها همیشه مسدود بماند. محتوایش با src/uploads/.htaccess یکسان است.
+if (!file_exists($uploadDir . '.htaccess')) {
+    @file_put_contents($uploadDir . '.htaccess',
+        "# ⚡ پوشهٔ آپلود: فقط فایل داده، هیچ اسکریپتی اجرا نشود\n"
+        . "Options -Indexes\n\n"
+        . "<IfModule mod_authz_core.c>\n"
+        . "    <FilesMatch \"\\.(php|phtml|php5|php7|phps|phar|pl|py|cgi|sh)$\">\n"
+        . "        Require all denied\n"
+        . "    </FilesMatch>\n"
+        . "</IfModule>\n"
+        . "<IfModule !mod_authz_core.c>\n"
+        . "    <FilesMatch \"\\.(php|phtml|php5|php7|phps|phar|pl|py|cgi|sh)$\">\n"
+        . "        Order allow,deny\n"
+        . "        Deny from all\n"
+        . "    </FilesMatch>\n"
+        . "</IfModule>\n\n"
+        . "<IfModule mod_mime.c>\n"
+        . "    RemoveHandler  .php .phtml .php5 .php7 .phps .phar\n"
+        . "    RemoveType     .php .phtml .php5 .php7 .phps .phar\n"
+        . "    SetHandler     none\n"
+        . "</IfModule>\n");
+}
+
 if (!defined('TRUST_PROXY_HEADER')) define('TRUST_PROXY_HEADER', false);
 
 /**

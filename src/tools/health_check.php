@@ -10,6 +10,8 @@
  *
  * اجرا از مرورگر (اگر SSH نداری):
  *     https://دامنهٔ-تو/tools/health_check.php?key=HEALTH_KEY
+ * تعمیر خودکار دو مشکل شناخته‌شده (UNIQUE و uploads/.htaccess):
+ *     https://دامنهٔ-تو/tools/health_check.php?key=HEALTH_KEY&fix=1
  *
  * ⚠️ برای اینکه از مرورگر باز شود، دو شرط لازم است:
  *    ۱) `.htaccess` ریشهٔ پروژه، tools/health_check.php را مستثنا کند (شده)
@@ -40,6 +42,16 @@ if (!$CLI) {
            . "  https://دامنه-ی-تو/tools/health_check.php?key=" . HEALTH_KEY . "\n");
     }
 }
+
+// 🛠️ حالت تعمیر خودکار:
+//    از مرورگر:  ...health_check.php?key=...&fix=1
+//    از خط فرمان: php tools/health_check.php --fix
+//    فقط دو اصلاح امن انجام می‌دهد (چیزی از رازها چاپ نمی‌شود):
+//     ۱) افزودن کلید UNIQUE به personal_notes (اگر جدول هست و کلید نیست)
+//     ۲) ساخت uploads/.htaccess اگر گم شده باشد
+//    و اگر اصلاح دیتابیس موفق شد، schema_version را هم از روی api.php می‌خواند
+//    و ثبت می‌کند تا ریکوئست بعدی api.php دوباره migration اجرا نکند.
+$FIX = $CLI ? in_array('--fix', $argv ?? [], true) : (($_GET['fix'] ?? '') === '1');
 
 define('ROOT', dirname(__DIR__));
 $pass = 0; $fail = 0; $warn = 0;
@@ -136,6 +148,83 @@ try {
     summary();
 }
 
+/* ═══════════ ۳٫۵) تعمیر خودکار (فقط با fix=1 / --fix) ═══════════ */
+if ($FIX) {
+    head('۳٫۵) تعمیر خودکار');
+    $dbRepaired = false;
+
+    // الف) ساخت uploads/.htaccess اگر گم شده باشد
+    if (!is_file(ROOT . '/uploads/.htaccess')) {
+        $ht = "# ⚡ پوشهٔ آپلود: فقط فایل داده، هیچ اسکریپتی اجرا نشود\n"
+            . "Options -Indexes\n\n"
+            . "<IfModule mod_authz_core.c>\n"
+            . "    <FilesMatch \"\\.(php|phtml|php5|php7|phps|phar|pl|py|cgi|sh)$\">\n"
+            . "        Require all denied\n"
+            . "    </FilesMatch>\n"
+            . "</IfModule>\n"
+            . "<IfModule !mod_authz_core.c>\n"
+            . "    <FilesMatch \"\\.(php|phtml|php5|php7|phps|phar|pl|py|cgi|sh)$\">\n"
+            . "        Order allow,deny\n"
+            . "        Deny from all\n"
+            . "    </FilesMatch>\n"
+            . "</IfModule>\n\n"
+            . "<IfModule mod_mime.c>\n"
+            . "    RemoveHandler  .php .phtml .php5 .php7 .phps .phar\n"
+            . "    RemoveType     .php .phtml .php5 .php7 .phps .phar\n"
+            . "    SetHandler     none\n"
+            . "</IfModule>\n";
+        @file_put_contents(ROOT . '/uploads/.htaccess', $ht);
+        is_file(ROOT . '/uploads/.htaccess')
+            ? ok('fix', 'uploads/.htaccess ساخته شد')
+            : bad('fix', 'ساخت uploads/.htaccess ناموفق بود', 'دسترسی نوشتن پوشهٔ uploads را چک کن');
+    } else {
+        ok('fix', 'uploads/.htaccess از قبل هست');
+    }
+
+    // ب) افزودن UNIQUE به personal_notes (گامی که migration api.php انجام می‌دهد)
+    if ($pdo->query("SHOW TABLES LIKE 'personal_notes'")->rowCount() > 0) {
+        $__uniq = false;
+        foreach ($pdo->query("SHOW INDEX FROM personal_notes") as $ix) {
+            if ((int)$ix['Non_unique'] === 0 && $ix['Key_name'] !== 'PRIMARY') { $__uniq = true; break; }
+        }
+        if (!$__uniq) {
+            try {
+                $pdo->exec("DELETE t1 FROM personal_notes t1
+                    INNER JOIN personal_notes t2
+                    WHERE t1.id > t2.id
+                      AND t1.agencyId = t2.agencyId
+                      AND t1.username = t2.username");
+                $pdo->exec("ALTER TABLE personal_notes ADD UNIQUE KEY uniq_agency_user (agencyId, username)");
+                ok('fix', 'کلید UNIQUE به personal_notes اضافه شد');
+                $dbRepaired = true;
+            } catch (Throwable $__e) {
+                bad('fix', 'افزودن UNIQUE ناموفق بود', $__e->getMessage());
+            }
+        } else {
+            ok('fix', 'personal_notes از قبل کلید UNIQUE دارد');
+        }
+    } else {
+        meh('fix', 'جدول personal_notes وجود ندارد؛ چیزی برای تعمیر نیست');
+    }
+
+    // ج) ثبت schema_version فقط اگر تعمیر دیتابیس انجام شد (تا migration نشتی نماند
+    //    و ریکوئست بعدی api.php دوباره تمام بلوک را اجرا نکند)
+    if ($dbRepaired) {
+        $__apiTxt = @file_get_contents(ROOT . '/api.php');
+        if ($__apiTxt && preg_match("/define\s*\(\s*'SCHEMA_VERSION'\s*,\s*(\d+)\s*\)/", $__apiTxt, $__m)) {
+            try {
+                $pdo->prepare("INSERT INTO sys_config (conf_key, conf_val) VALUES ('schema_version', ?) ON DUPLICATE KEY UPDATE conf_val = VALUES(conf_val)")->execute([$__m[1]]);
+                ok('fix', "schema_version = {$__m[1]} ثبت شد");
+            } catch (Throwable $__e) {
+                meh('fix', 'schema_version ثبت نشد', $__e->getMessage());
+            }
+        } else {
+            meh('fix', 'schema_version از api.php خوانده نشد', 'api.php را یک بار در مرورگر باز کن تا migration خودش ثبتش کند');
+        }
+    }
+    echo "\n";
+}
+
 /* ═══════════ ۴) جدول‌ها ═══════════ */
 head('۴) جدول‌های دیتابیس');
 // این سه جدول قبلاً هیچ‌جا ساخته نمی‌شدند
@@ -177,7 +266,7 @@ if ($pdo->query("SHOW TABLES LIKE 'personal_notes'")->rowCount() > 0) {
     $uniq = false;
     foreach ($pdo->query("SHOW INDEX FROM personal_notes") as $ix) { if ((int)$ix['Non_unique'] === 0 && $ix['Key_name'] !== 'PRIMARY') $uniq = true; }
     $uniq ? ok('db', 'personal_notes کلید UNIQUE دارد')
-          : bad('db', 'personal_notes کلید UNIQUE ندارد', 'بدون آن هر ذخیره یک ردیف جدید می‌سازد');
+          : bad('db', 'personal_notes کلید UNIQUE ندارد', 'بدون آن هر ذخیره یک ردیف جدید می‌سازد — برای تعمیر خودکار همین آدرس را با &fix=1 صدا بزن');
 }
 
 // طول ستون ip در rate_limits — کلید ما ۱۵ کاراکتر است
@@ -204,7 +293,7 @@ $files = [
     'stt.php'                => 'P1 — api.php به آن require_once دارد؛ بدون آن fatal',
     'index.html'             => 'ضروری',
     '.htaccess'              => 'P0 — محافظت از config.php و backups',
-    'uploads/.htaccess'      => 'P0 — جلوگیری از اجرای اسکریپت در آپلودها',
+    'uploads/.htaccess'      => 'P0 — جلوگیری از اجرای اسکریپت در آپلودها (اگر نیست: آدرس را با &fix=1 صدا بزن یا استخراج مجدد با تیک Overwrite)',
     'backups/.htaccess'      => 'P0 — بک‌آپ‌ها قابل دانلود نباشند',
     'tools/.htaccess'        => 'P0 — ابزارها از وب بسته باشند',
     'assets/logo.png'        => 'P2 — قبلاً گم شده بود؛ لوگو در ۳ جا شکسته بود',
