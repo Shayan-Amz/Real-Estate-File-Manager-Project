@@ -668,8 +668,12 @@ if ($method === 'POST') {
                 $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
                 $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep;
 
-                if ($hc === 200) break;          // موفق — بیرون
-                if ($hc === 401) break;          // کلید باطل است؛ آدرس دیگر کمکی نمی‌کند
+                if ($hc === 200) break;   // موفق — بیرون
+                // 🛡️ این خطاها سطح «اکانت» هستند نه سطح «آدرس»؛ هر دو آدرس به
+                //    همان OpenRouter می‌رسند، پس تلاش دوم فقط یک سهمیهٔ دیگر از
+                //    سقف روزانه هدر می‌دهد (درخواست‌های ۴۲۹ هم از سهمیه کم
+                //    می‌شوند). پس حلقه را متوقف می‌کنیم.
+                if (in_array($hc, [401, 402, 429], true)) break;
             }
             // 🛡️ جزئیات هر تلاش فقط در لاگ سرور، نه در پاسخ کلاینت
             error_log('[Jarvis] model=' . $jarvisModels[0] . ' | ' . implode(' | ', $attemptLog));
