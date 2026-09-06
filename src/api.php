@@ -431,7 +431,18 @@ if ($method === 'POST') {
             if (!is_array($rawInput)) $rawInput = [];
             
             // ⚡ ادغام دیتای JSON متنی با دیتای فایل‌های صوتی (حیاتی برای عبور از فایروال)
-            $input = sanitizeInput(array_merge($_POST, $rawInput));
+            $input = array_merge($_POST, $rawInput);
+            // ⚠️ اصلاح حیاتی: رمز/پین‌ها نباید از sanitizeInput عبور کنند.
+            //    htmlspecialchars روی کاراکترهایی مثل & < > " ' اثر می‌گذارد؛
+            //    اگر پین ذخیره‌شده با مقدار «خام» hash شده باشد (مثلاً از طریق
+            //    پنل لایسنس)، ورود همیشه «رمز عبور اشتباه است» می‌دهد.
+            //    رمزها پس از login/save به‌صورت bcrypt ذخیره می‌شوند، پس
+            //    sanitize روی آن‌ها فقط رفتار را می‌شکند (طبق OWASP برای
+            //    password fields این غلط است).
+            foreach ($input as $__k => $__v) {
+                if (in_array($__k, ['pin', 'newPin', 'adminPin', 'masterPass', 'password', 'new_pass'], true)) continue;
+                $input[$__k] = sanitizeInput($__v);
+            }
             
             // ⚡ تشخیص قطعیِ اکشنِ درخواستی تا سرور گیج نشود
             if (empty($action)) {

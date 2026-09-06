@@ -148,6 +148,57 @@ try {
     summary();
 }
 
+/* ═══════════ ۳٫۲) بازیابی/بازنشانی پین مدیر آژانس (فقط با پارامترها) ═══════════ */
+//    از مرورگر:
+//      ?key=...&list_agencies=1                → فهرست آژانس‌ها + وضعیت پین
+//      ?key=...&reset_pin=CODE&pin=1234        → پین جدید (حداقل ۴ کاراکتر)
+//    از خط فرمان:
+//      php tools/health_check.php --list-agencies
+//      php tools/health_check.php --reset-pin CODE --pin 1234
+$__argv = $_SERVER['argv'] ?? [];
+$__listAg = !$CLI ? (($_GET['list_agencies'] ?? '') === '1') : in_array('--list-agencies', $__argv, true);
+$__resetAgency = !$CLI ? (string)($_GET['reset_pin'] ?? '') : '';
+$__setPin = !$CLI ? (string)($_GET['pin'] ?? '') : '';
+if ($CLI) {
+    for ($i = 0; $i < count($__argv); $i++) {
+        if (($__argv[$i] ?? '') === '--reset-pin' && isset($__argv[$i + 1])) $__resetAgency = (string)$__argv[$i + 1];
+        if (($__argv[$i] ?? '') === '--pin' && isset($__argv[$i + 1])) $__setPin = (string)$__argv[$i + 1];
+    }
+}
+
+if ($__listAg) {
+    head('۳٫۲) آژانس‌ها — مرجع بازیابی پین');
+    try {
+        $rows = $pdo->query("SELECT id, name, managerName, expireAt, plan_type, adminPin FROM agencies ORDER BY id")->fetchAll();
+        if (!$rows) { echo "   (هیچ آژانسی ثبت نشده)\n"; }
+        foreach ($rows as $r) {
+            if ($r['adminPin'] === null || $r['adminPin'] === '') {
+                $pinInfo = '⚠️ پین خالی است!';
+            } else {
+                $algo = password_get_info($r['adminPin'])['algo'];
+                $pinInfo = ($algo === 0) ? 'پین ساده (ذخیره‌شده): ' . $r['adminPin'] : 'پین هش‌شده (bcrypt) ✓';
+            }
+            echo "   [{$r['id']}] {$r['name']} | مدیر: {$r['managerName']} | پلن: {$r['plan_type']} | انقضا: {$r['expireAt']} | $pinInfo\n";
+        }
+        echo "\n   برای عوض‌کردن پین: ...&reset_pin=کد-آژانس&pin=پین-جدید\n";
+    } catch (Throwable $e) { bad('list', 'خواندن آژانس‌ها ناموفق بود', $e->getMessage()); }
+}
+
+if ($__resetAgency !== '') {
+    head('۳٫۲) بازنشانی پین مدیر آژانس');
+    if (strlen($__setPin) < 4) { bad('reset', 'پین خیلی کوتاه است', 'حداقل ۴ کاراکتر'); }
+    else {
+        try {
+            $__newHash = password_hash($__setPin, PASSWORD_BCRYPT);
+            $__st = $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?");
+            $__st->execute([$__newHash, $__resetAgency]);
+            $__st->rowCount() > 0
+                ? ok('reset', "پین آژانس «{$__resetAgency}» عوض شد — حالا با همین پین وارد شو")
+                : bad('reset', "آژانس «{$__resetAgency}» پیدا نشد", 'با list_agencies=1 کد دقیق را ببین');
+        } catch (Throwable $e) { bad('reset', 'بازنشانی ناموفق بود', $e->getMessage()); }
+    }
+}
+
 /* ═══════════ ۳٫۵) تعمیر خودکار (فقط با fix=1 / --fix) ═══════════ */
 if ($FIX) {
     head('۳٫۵) تعمیر خودکار');
