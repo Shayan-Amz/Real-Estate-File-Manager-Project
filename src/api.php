@@ -118,7 +118,7 @@ try {
 
     // ⚡ هر بار که ساختار دیتابیس عوض شد این عدد را یکی زیاد کن تا
     //    migration دوباره اجرا شود.
-    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 3);
+    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 4);
 
     try {
         // ⚡ جدول تنظیمات سیستم: مثل rate_limits هیچ‌جا ساخته نمی‌شد، ولی
@@ -188,6 +188,32 @@ try {
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_agency_user (agencyId, username)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            // ⚡ جدول personal_notes روی این دیتابیس از قبل وجود داشت (نسخهٔ
+            //    قدیمی که schema_version در آن ثبت نشده بود) ولی بدون کلید UNIQUE.
+            //    بدون این اصلاح، saveNotes هر بار یک ردیف جدید می‌ساخت.
+            //    ⚠️ اگر ردیف تکراری (agencyId, username) در جدول هست، هر جفت
+            //    تکراری با DELETE به یکی تقلیل می‌یابد (آخرین ردیف می‌ماند —
+            //    ساده‌ترین گزینهٔ امن؛ در واقع هر کدام آخرین note_text را دارند).
+            //    این بخش در try/catch است: اگر دیتابیس اجازهٔ ALTER را ندهد،
+            //    بقیهٔ migration از کار نمی‌افتد.
+            try {
+                $__uniq = false;
+                foreach ($pdo->query("SHOW INDEX FROM personal_notes") as $ix) {
+                    if ((int)$ix['Non_unique'] === 0 && $ix['Key_name'] !== 'PRIMARY') { $__uniq = true; break; }
+                }
+                if (!$__uniq) {
+                    $pdo->exec("DELETE t1 FROM personal_notes t1
+                        INNER JOIN personal_notes t2
+                        WHERE t1.id > t2.id
+                          AND t1.agencyId = t2.agencyId
+                          AND t1.username = t2.username");
+                    $pdo->exec("ALTER TABLE personal_notes ADD UNIQUE KEY uniq_agency_user (agencyId, username)");
+                    error_log('[api.php] migration: کلید UNIQUE به personal_notes اضافه شد');
+                }
+            } catch (Throwable $__u) {
+                error_log('[api.php] migration (UNIQUE personal_notes): ' . $__u->getMessage());
+            }
 
             // ⚡ ثبت نسخهٔ ساختار تا این بلوک در ریکوئست‌های بعدی رد شود.
             //    عمداً داخل «if properties exists» است: اگر دیتابیس خالی بود

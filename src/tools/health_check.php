@@ -112,6 +112,15 @@ if (defined('ALLOWED_ORIGIN')) {
 if (defined('STT_HF_TOKEN') && STT_HF_TOKEN !== '' && strpos(STT_HF_TOKEN, 'REPLACE') === false) ok('config', 'STT_HF_TOKEN پر شده');
 else meh('config', 'STT_HF_TOKEN خالی یا placeholder است', 'تبدیل صوت به متن کار نخواهد کرد');
 
+if (defined('OPENROUTER_API_KEY') && OPENROUTER_API_KEY !== '' && strpos(OPENROUTER_API_KEY, 'REPLACE') === false) ok('config', 'OPENROUTER_API_KEY پر شده');
+else meh('config', 'OPENROUTER_API_KEY خالی یا placeholder است', 'جارویس متنی کار نخواهد کرد');
+
+// ⚠️ این رمز در Test.zip داخل گیت منتشر شده است. فقط هشش را مقایسه می‌کنیم
+//    تا خودِ رمز دوباره در سورس نوشته نشود؛ خودش را هم چاپ نمی‌کنیم.
+if (defined('DB_PASS') && DB_PASS !== '' && hash_equals('24ac93fb5da49359299fcf33b2077e5a1f6f467dc689f026f981ce2136891f6a', hash('sha256', DB_PASS))) {
+    bad('config', 'DB_PASS هنوز همان رمزِ لو‌رفته در گیت است', 'DirectAdmin → MySQL Management → Change Password → بعد DB_PASS را در config.php با رمز جدید عوض کن');
+}
+
 /* ═══════════ ۳) اتصال دیتابیس ═══════════ */
 head('۳) اتصال دیتابیس');
 $pdo = null;
