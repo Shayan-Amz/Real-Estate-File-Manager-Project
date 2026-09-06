@@ -554,9 +554,18 @@ if ($method === 'POST') {
             //    (ai.shayan-api.ir) که «403 Access denied by security policy»
             //    می‌دهد — یعنی خودِ پروکسی درخواست را رد می‌کند، نه OpenRouter.
             //    با این زنجیره، حتی اگر config.php دست‌نخورده بماند کار می‌کند.
+            // ⚠️ آدرس رسمی اول است، نه آدرس config.php. دلیلش: پروکسی شخصی
+            //    (ai.shayan-api.ir) خطای ۴۰۳ «Access denied by security policy»
+            //    می‌دهد و هر بار اولین تلاش را می‌سوزاند. آدرس config فقط
+            //    به‌عنوان آخرین چاره امتحان می‌شود.
+            // 🔎 نسخه‌نما: در هر پیام خطا چاپ می‌شود تا معلوم شود کدام فایل
+            //    واقعاً روی هاست است. (چند بار نتوانستیم تشخیص دهیم آپلود
+            //    انجام شده یا نه.)
+            if (!defined('JARVIS_BUILD')) { define('JARVIS_BUILD', 'fix21-r4'); }
+
             $jarvisEndpoints = array_values(array_unique(array_filter([
-                (defined('OPENROUTER_URL') && trim(OPENROUTER_URL) !== '') ? trim(OPENROUTER_URL) : null,
                 'https://openrouter.ai/api/v1/chat/completions',
+                (defined('OPENROUTER_URL') && trim(OPENROUTER_URL) !== '') ? trim(OPENROUTER_URL) : null,
             ])));
 
             // 🛡️ زنجیرهٔ مدل‌ها. OpenRouter با آرایهٔ «models» خودش مدل بعدی را
@@ -652,13 +661,22 @@ if ($method === 'POST') {
             //    همان مدل اول (از config.php) فرستاده می‌شد و اگر نامعتبر بود
             //    ۴۰۰ می‌گرفتیم و تمام — آرایهٔ models نجاتش نمی‌داد چون ۴۰۰
             //    خطای اعتبارسنجی است و قبل از routing رخ می‌دهد.
-            $maxAttempts   = 2;      // یک تلاش + یک تلاش بدون response_format
-            $attempt       = 0;
-            $useJsonFormat = true;   // بعد از اولین ۴۰۰ خاموش می‌شود
-            foreach ($jarvisEndpoints as $ep) {
-                if ($attempt >= $maxAttempts) break;
-                $attempt++;
-                if (!$useJsonFormat) { unset($data['response_format']); }
+            // 🛡️ هر آدرس دو بار زده می‌شود: با response_format و بدون آن.
+            //    خیلی از مدل‌های رایگان json_object را پشتیبانی نمی‌کنند و
+            //    ۴۰۰ می‌دهند — این همان «پارامتر نامعتبر» است. قبلاً این
+            //    حالت پوشش داده نمی‌شد چون سقف تلاش روی آدرس دوم تمام می‌شد.
+            $jarvisTries = [];
+            foreach ($jarvisEndpoints as $__ep) {
+                $jarvisTries[] = [$__ep, true];
+                $jarvisTries[] = [$__ep, false];
+            }
+            $jarvisTries = array_slice($jarvisTries, 0, 3);   // سقف: ۳ درخواست (سهمیهٔ رایگان ۵۰ در روز است)
+
+            foreach ($jarvisTries as $__t) {
+                $ep      = $__t[0];
+                $useJson = $__t[1];
+                if ($useJson) { $data['response_format'] = ['type' => 'json_object']; }
+                else          { unset($data['response_format']); }
 
                 $ch = curl_init($ep);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -682,15 +700,13 @@ if ($method === 'POST') {
                 $ce = curl_error($ch);   // ⚡ باید قبل از curl_close خوانده شود؛ قبلاً بعد از آن خوانده می‌شد و همیشه خالی بود
                 curl_close($ch);
 
-                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
+                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . ($useJson ? '+json' : '-json') . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
                 $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep; $usedModel = $jarvisModel;
 
                 if ($hc === 200) break;                 // موفق
                 // ۴۰۱/۴۰۲ سطح «اکانت» هستند؛ آدرس دیگر کمکی نمی‌کند
                 // و فقط یک سهمیهٔ دیگر از سقف روزانه هدر می‌دهد.
                 if (in_array($hc, [401, 402], true)) break;
-                // ۴۰۰ ممکن است از response_format باشد؛ یک بار بدون آن امتحان می‌کنیم
-                if ($hc === 400 && $useJsonFormat) { $useJsonFormat = false; }
             }
             // 🛡️ جزئیات هر تلاش در لاگ سرور
             error_log('[Jarvis] ' . implode(' | ', $attemptLog));
@@ -728,7 +744,7 @@ if ($method === 'POST') {
                 //    OpenRouter یکی نیست. اولی یعنی پروکسی/WAF رد کرده،
                 //    دومی یعنی کلید واقعاً باطل است.
                 $failedHost = (string) parse_url((string) $usedUrl, PHP_URL_HOST);
-                $errorReason = 'کد وضعیت: ' . $httpCode . ' از ' . ($failedHost !== '' ? $failedHost : 'نامشخص');
+                $errorReason = 'نسخه ' . JARVIS_BUILD . ' | کد وضعیت: ' . $httpCode . ' از ' . ($failedHost !== '' ? $failedHost : 'نامشخص');
                 if ($curlError !== '') {
                     $errorReason .= ' | قطعی شبکه: ' . $curlError;
                 } elseif ($httpCode === 401) {
