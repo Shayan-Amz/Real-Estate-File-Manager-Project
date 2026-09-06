@@ -575,13 +575,18 @@ if ($method === 'POST') {
             //    upstream» که می‌گیری)، خودش مدل بعدی لیست را امتحان می‌کند.
             //    ترتیب عمدی است: اول مدل‌های چندزبانه که فارسی را خوب می‌فهمند
             //    و JSON تمیز می‌دهند، نه مدل‌های مخصوص کدنویسی.
+            // ⚠️ ترتیب عمداً این است: اول مدل‌های مطمئن، بعد مدل config.php.
+            //    قبلاً مدل config اول بود و چون مقدارش روی یک مدل منسوخ مانده
+            //    بود، هر بار یک درخواست با ۴۰۰ هدر می‌رفت (سقف رایگان فقط
+            //    ۵۰ درخواست در روز است). مدل config حذف نمی‌شود، فقط به
+            //    عنوان fallback استفاده می‌شود.
             $jarvisModels = array_values(array_unique(array_filter([
-                $cfgModel !== '' ? $cfgModel : null,
                 'google/gemma-4-26b-a4b-it:free',            // چندزبانه، ۲۶۲K
                 'google/gemma-4-31b-it:free',                // نسخهٔ قوی‌تر، ۱۴۰+ زبان
                 'qwen/qwen3-next-80b-a3b-instruct:free',     // قوی در استخراج ساختاریافته
                 'meta-llama/llama-3.3-70b-instruct:free',    // چندزبانه، پایدار
                 'openai/gpt-oss-20b:free',                   // سبک، برای وقتی بقیه شلوغ‌اند
+                $cfgModel !== '' ? $cfgModel : null,         // انتخاب خودت، به‌عنوان fallback
             ])));
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
@@ -652,9 +657,24 @@ if ($method === 'POST') {
                 "response_format" => ["type" => "json_object"]
             ];
 
-            $response = null; $httpCode = 0; $curlError = ''; $usedUrl = '';
+            $response = null; $httpCode = 0; $curlError = ''; $usedUrl = ''; $usedModel = '';
             $attemptLog = [];
+            // 🛡️ حالا روی «مدل‌ها» هم می‌چرخیم، نه فقط آدرس‌ها. قبلاً همیشه
+            //    همان مدل اول (از config.php) فرستاده می‌شد و اگر نامعتبر بود
+            //    ۴۰۰ می‌گرفتیم و تمام — آرایهٔ models نجاتش نمی‌داد چون ۴۰۰
+            //    خطای اعتبارسنجی است و قبل از routing رخ می‌دهد.
+            $maxAttempts   = 3;      // سقف تلاش، تا سهمیهٔ روزانهٔ رایگان نسوزد
+            $attempt       = 0;
+            $useJsonFormat = true;   // بعد از اولین ۴۰۰ خاموش می‌شود
             foreach ($jarvisEndpoints as $ep) {
+              foreach ($jarvisModels as $mi => $modelName) {
+                if ($attempt >= $maxAttempts) break 2;
+                $attempt++;
+
+                $data['model']  = $modelName;
+                $data['models'] = array_slice($jarvisModels, $mi);  // بقیه به‌عنوان fallback سمت OpenRouter
+                if (!$useJsonFormat) { unset($data['response_format']); }
+
                 $ch = curl_init($ep);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_POST, true);
@@ -677,20 +697,21 @@ if ($method === 'POST') {
                 $ce = curl_error($ch);   // ⚡ باید قبل از curl_close خوانده شود؛ قبلاً بعد از آن خوانده می‌شد و همیشه خالی بود
                 curl_close($ch);
 
-                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
-                $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep;
+                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . '/' . $modelName . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
+                $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep; $usedModel = $modelName;
 
-                if ($hc === 200) break;   // موفق — بیرون
-                // 🛡️ ۴۰۱ و ۴۰۲ سطح «اکانت» هستند: عوض کردن آدرس کمکی نمی‌کند
-                //    و فقط یک سهمیهٔ دیگر از سقف روزانه هدر می‌دهد (درخواست‌های
-                //    ناموفق هم از سهمیه کم می‌شوند). پس حلقه را می‌بندیم.
-                //    ۴۲۹ را عمداً نمی‌بندیم: «rate-limited upstream» یعنی خودِ
-                //    مدل شلوغ است، و اگر آدرس اول یک پروکسی خراب باشد آدرس رسمی
-                //    با همان لیست مدل شانس دیگری می‌دهد.
-                if (in_array($hc, [401, 402], true)) break;
+                if ($hc === 200) break 2;                 // موفق
+                // ۴۰۱/۴۰۲ سطح «اکانت» هستند؛ مدل یا آدرس دیگر کمکی نمی‌کند
+                // و فقط یک سهمیهٔ دیگر از سقف روزانه هدر می‌دهد.
+                if (in_array($hc, [401, 402], true)) break 2;
+                // ۴۰۰ ممکن است از response_format باشد؛ یک بار بدون آن امتحان می‌کنیم
+                if ($hc === 400 && $useJsonFormat) { $useJsonFormat = false; }
+                // ۴۰۰/۴۰۴ → مدل نامعتبر است؛ ۴۲۹ → آن مدل شلوغ است.
+                // هر دو یعنی «مدل بعدی» — حلقه ادامه می‌یابد.
+              }
             }
-            // 🛡️ جزئیات هر تلاش فقط در لاگ سرور، نه در پاسخ کلاینت
-            error_log('[Jarvis] model=' . $jarvisModels[0] . ' | ' . implode(' | ', $attemptLog));
+            // 🛡️ جزئیات هر تلاش در لاگ سرور
+            error_log('[Jarvis] ' . implode(' | ', $attemptLog));
 
             $aiResult = json_decode($response, true);
             
@@ -739,7 +760,11 @@ if ($method === 'POST') {
                 } elseif ($httpCode === 429) {
                     $errorReason .= ' | سقف درخواست رایگان پر شده (بدون شارژ: ۵۰ درخواست در روز).';
                 } elseif ($httpCode === 400 || $httpCode === 404) {
-                    $errorReason .= ' | مدل «' . $jarvisModels[0] . '» معتبر نیست یا پارامتر نامعتبر است.';
+                    $errorReason .= ' | مدل «' . $usedModel . '» معتبر نیست یا پارامتر نامعتبر است.';
+                    // 🔎 تکه‌ای از پاسخ ارائه‌دهنده تا علت دقیق معلوم شود.
+                    //    پاسخ OpenRouter رازی ندارد (برخلاف خطای دیتابیس).
+                    $snippet = trim((string) preg_replace('/\s+/', ' ', (string) $response));
+                    if ($snippet !== '') $errorReason .= ' | پاسخ: ' . mb_substr($snippet, 0, 220);
                 }
 
                 echo json_encode(['error' => 'خطا در ارتباط با موتور هوش مصنوعی. (' . $errorReason . ')'], JSON_UNESCAPED_UNICODE);
