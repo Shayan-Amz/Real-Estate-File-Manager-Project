@@ -35,7 +35,9 @@
 **نتیجهٔ قطعی:**
 - `STT_PROVIDER` = **`'hf'`** ✅ (در config.php از قبل همین است)
 - `STT_HF_TOKEN` = تایید شده ✅
-- `OPENROUTER_API_KEY` = **باید اصلاح شود** (خطای 403 از کلید یا از URL سفارشی `https://ai.shayan-api.ir/api/v1/chat/completions` است)
+- `OPENROUTER_API_KEY` = معتبر است (طبق گفتهٔ کاربر)
+- `OPENROUTER_MODEL` = ⚠️ احتمالاً منسوخ شده (`laguna-xs-2.1:free`) — خطای 403 «Access denied by security policy» می‌داد
+- **اقدام انجامشده (2026-09-07):** بستهٔ `fix19-model.zip` → ابزار `set_model.php` ساخت که فقط مدل را به `google/gemma-4-26b-a4b-it:free` عوض می‌کند (بدون دست‌زدن به بقیهٔ فایل)
 
 ---
 
