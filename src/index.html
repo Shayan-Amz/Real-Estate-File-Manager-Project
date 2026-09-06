@@ -2000,9 +2000,15 @@
     }
 }
 
+        let __fetchDataBusy = false;
         async function fetchAllData() {
+            // ⚡ ضد همپوشانی: اگر سینک قبلی هنوز در جریان است، دومی رد شود
+            //    (وقتی سرور کند است، ۱۵ پول موازی همدیگر را «مسدود» می‌کردند)
+            if (__fetchDataBusy) return;
+            __fetchDataBusy = true;
             try { const data = await apiCall('getData'); if (data.unmodified) return; lastSyncHash = data.dataHash || ""; localStorage.setItem('amlakDataCache', JSON.stringify(data)); processData(data); isOnline = true; } 
             catch (e) { isOnline = false; const cached = localStorage.getItem('amlakDataCache'); if (cached) processData(JSON.parse(cached)); }
+            finally { __fetchDataBusy = false; }
         }
 
         function processData(data) {
@@ -2057,7 +2063,7 @@
         function startListeningToData() { 
             fetchAllData(); 
             if (syncInterval) clearInterval(syncInterval); 
-            syncInterval = setInterval(fetchAllData, 15000); // ⚡ سینک هر ۱۵ ثانیه
+            syncInterval = setInterval(fetchAllData, 30000); // ⚡ سینک هر ۳۰ ثانیه (کاهش فشار سرور)
             
             //if (pingInterval) clearInterval(pingInterval);
             //pingInterval = setInterval(() => {
@@ -2066,7 +2072,7 @@
                 //}
             //}, 20000); // ⚡ اعلام حضور هر ۲۰ ثانیه
         }
-        document.addEventListener("visibilitychange", () => { if (document.hidden) { if (syncInterval) clearInterval(syncInterval); } else { if (userProfile) { fetchAllData(); syncInterval = setInterval(fetchAllData, 15000); } } });
+        document.addEventListener("visibilitychange", () => { if (document.hidden) { if (syncInterval) clearInterval(syncInterval); } else { if (userProfile) { fetchAllData(); syncInterval = setInterval(fetchAllData, 30000); } } });
 
         window.handleGuestLogin = async function(e) { 
             if(e) e.preventDefault(); 
@@ -3622,10 +3628,13 @@
             });
         }
 
-        // ۳. اجرای اسکنر هر نیم ثانیه (به محض ساخته شدن فایل جدید، قفل اعمال میشه)
+        // ۳. اجرای اسکنر قفل‌ها — هر ۲ ثانیه و فقط وقتی تب فعال است
+        //    (قبلاً هر ۵۰۰ms اجرا می‌شد: DOM را مدام دستکاری و onclick ها را
+        //     دوباره می‌بست — روی هاست کند، کل صفحه را سنگین می‌کرد)
         setInterval(() => {
+            if (document.hidden) return;
             try { runLockEngine(); } catch(e) {}
-        }, 500);
+        }, 2000);
 
         // ۴. بلاک کردن کلیک‌ها به صورت بی‌رحمانه!
         document.addEventListener('click', function(e) {
@@ -3781,18 +3790,25 @@
             // توقف تایمر قبلی (برای جلوگیری از تداخل)
             if (window.pingTimer) clearInterval(window.pingTimer);
             
+            let __pingBusy = false;
             const sendPing = async () => {
+                // ⚡ ضد همپوشانی + فقط وقتی تب فعال است
+                if (__pingBusy || document.hidden) return;
+                __pingBusy = true;
                 let up = window.userProfile;
                 if (!up) { try { up = JSON.parse(localStorage.getItem('amlakProfile')); } catch(e){} }
                 
                 // فقط اگر کاربر مهمان نباشد پینگ ارسال می‌شود
-                if (up && up.name && up.role !== 'مهمان') {
-                    try { await window.apiCall('ping', {}); } catch(e) { console.log('Ping skipped'); }
-                }
+                try {
+                    if (up && up.name && up.role !== 'مهمان') {
+                        await window.apiCall('ping', {});
+                    }
+                } catch(e) { console.log('Ping skipped'); }
+                finally { __pingBusy = false; }
             };
             
-            // تکرار ارسال پینگ هر 2۰ ثانیه (2۰ هزار میلی‌ثانیه)
-            window.pingTimer = setInterval(sendPing, 20000);
+            // تکرار ارسال پینگ هر ۶۰ ثانیه (کاهش فشار DB/سرور)
+            window.pingTimer = setInterval(sendPing, 60000);
         };
 
         // روشن کردن سیستم بلافاصله بعد از باز شدن سایت

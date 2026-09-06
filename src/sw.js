@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amlak-safe-cache-v2';
+const CACHE_NAME = 'amlak-safe-cache-v3';
 const urlsToCache = [
     './',
     './index.html'
@@ -39,6 +39,15 @@ self.addEventListener('fetch', event => {
 
     // ⚡ درخواست‌های دیتابیس (api.php) را از کش سرویس ورکر مستثنی می‌کنیم
     if (event.request.url.includes('api.php')) {
+        return;
+    }
+
+    // 🔴 فایل‌های PHP (پنل‌ها، ابزارها) هرگز از کش جایگزین نشوند.
+    //    قبلاً اگر سرور کند/خطا می‌داد، fetch رد می‌شد و به‌جای خطا،
+    //    «index.html» کش‌شده برمی‌گشت — برای همین پنل مدیریت به‌نظر
+    //    می‌رسید «صفحهٔ اصلی سایت» می‌آید و مشکل واقعی دیده نمی‌شد.
+    const urlNoQuery = event.request.url.split('?')[0];
+    if (urlNoQuery.endsWith('.php')) {
         return;
     }
 
