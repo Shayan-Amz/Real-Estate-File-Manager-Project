@@ -339,9 +339,24 @@ if (!empty($authToken) && strpos($authToken, '.') !== false) {
             }
         }
     }
-    if (!$isFullyAuthenticated && !in_array($action, ['loginManager', 'loginConsultant', 'saveAgency'])) {
-        http_response_code(403); echo json_encode(['error' => 'نشست شما منقضی شده یا نامعتبر است. لطفاً دوباره وارد شوید.']); exit;
-    }
+}
+
+// 🛡️ رفع دور زدن احراز هویت: این چک قبلاً داخل بلوک «اگر توکن فرستاده
+//    شده بود» قرار داشت، پس با نفرستادنِ هیچ توکنی کاملاً اجرا نمی‌شد و
+//    فقط لیست سیاه خط بعد مانع می‌شد (که ۸ اکشن از ۱۳ تا را پوشش می‌داد).
+//    در نتیجه getNotes و saveNotes بدون هیچ اعتبارنامه‌ای قابل صدا زدن بودند.
+//
+//    حالا برای «هر» درخواستی اجرا می‌شود. استثناها فقط اکشن‌هایی هستند که
+//    ذاتاً عمومی‌اند:
+//      loginManager / loginConsultant → خودِ ورود
+//      saveAgency                     → ثبت‌نام آژانس جدید
+//      getData                        → نمای عمومی. مهمان بدون توکن این را
+//          صدا می‌زند: index.html:2082 → startListeningToData → fetchAllData.
+//          اگر اینجا استثنا نمی‌شد، صفحهٔ فرود مهمان می‌شکست.
+//    ping عمداً استثنا «نیست»: فرانت فقط برای کاربر واردشده پینگ می‌فرستد
+//    (index.html:3789 شرط up.role !== 'مهمان' دارد).
+if (!$isFullyAuthenticated && !in_array($action, ['loginManager', 'loginConsultant', 'saveAgency', 'getData'], true)) {
+    http_response_code(403); echo json_encode(['error' => 'نشست شما منقضی شده یا نامعتبر است. لطفاً دوباره وارد شوید.']); exit;
 }
 
 if ($userRole === 'مهمان' && in_array($action, ['saveProperty', 'deleteProperty', 'saveDemand', 'deleteDemand', 'saveMember', 'changeMyPassword', 'resetMemberPassword', 'deleteMember'])) {
