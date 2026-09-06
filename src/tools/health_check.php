@@ -11,7 +11,13 @@
  * اجرا از مرورگر (اگر SSH نداری):
  *     https://دامنهٔ-تو/tools/health_check.php?key=HEALTH_KEY
  *
- * ⚠️ بعد از اینکه یک بار اجرا کردی و همه‌چیز سبز بود، این فایل را پاک کن.
+ * ⚠️ برای اینکه از مرورگر باز شود، دو شرط لازم است:
+ *    ۱) `.htaccess` ریشهٔ پروژه، tools/health_check.php را مستثنا کند (شده)
+ *    ۲) پارامتر ?key= همراه درخواست باشد (این کد 403 «کلید اشتباه» می‌دهد
+ *       اگر URL را بدون کلید صدا بزنی)
+ *
+ * ⚠️ بعد از اینکه یک بار اجرا کردی و همه‌چیز سبز بود، این فایل را پاک کن
+ *    (کلید داخل همین فایل در گیت است و «راز» محسوب نمی‌شود).
  */
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -26,7 +32,12 @@ if (!$CLI) {
     header('Content-Type: text/plain; charset=utf-8');
     if (!hash_equals(HEALTH_KEY, (string)($_GET['key'] ?? ''))) {
         http_response_code(403);
-        exit("403 — کلید اشتباه است. از «php tools/health_check.php» استفاده کن.\n");
+        // این پیام عمداً «خودِ PHP» را ذکر می‌کند تا اگر به‌جای این متن،
+        // صفحهٔ «Forbidden» خالی/HTML آپاچی دیدی، معلوم باشد مشکل از
+        // .htaccess ریشه است نه از این فایل.
+        exit("403 — کلید اشتباه است. این پاسخ از خودِ PHP است، یعنی .htaccess اجازهٔ اجرا داده.\n"
+           . "آدرس درست (کلید را حتماً بگذار):\n"
+           . "  https://دامنه-ی-تو/tools/health_check.php?key=" . HEALTH_KEY . "\n");
     }
 }
 
@@ -36,7 +47,11 @@ $pass = 0; $fail = 0; $warn = 0;
 function ok($g, $msg, $detail = '')   { global $pass; $pass++; line('✅', $g, $msg, $detail); }
 function bad($g, $msg, $detail = '')  { global $fail; $fail++; line('❌', $g, $msg, $detail); }
 function meh($g, $msg, $detail = '')  { global $warn; $warn++; line('⚠️ ', $g, $msg, $detail); }
-function head($t) { echo "\n── $t " . str_repeat('─', max(0, 58 - mb_strlen($t))) . "\n"; }
+function head($t) {
+    // mb_strlen ممکن است نصب نباشد؛ بدون آن هم اسکریپت نباید ۵۰۰ بدهد
+    $len = function_exists('mb_strlen') ? mb_strlen($t) : strlen($t);
+    echo "\n── $t " . str_repeat('─', max(0, 58 - $len)) . "\n";
+}
 function line($ic, $g, $msg, $detail = '') {
     echo "$ic [$g] $msg" . ($detail !== '' ? "\n      ↳ $detail" : '') . "\n";
 }
@@ -49,7 +64,7 @@ head('۱) محیط PHP');
 if (version_compare(PHP_VERSION, '7.4.0', '>=')) ok('php', 'نسخهٔ PHP ' . PHP_VERSION);
 else bad('php', 'نسخهٔ PHP خیلی قدیمی است: ' . PHP_VERSION, 'حداقل 7.4 لازم است');
 
-foreach (['pdo_mysql' => 'اتصال به دیتابیس', 'curl' => 'صدا زدن API صوت', 'gd' => 'تغییر اندازهٔ عکس‌ها', 'json' => 'پاسخ‌های JSON'] as $ext => $why) {
+foreach (['pdo_mysql' => 'اتصال به دیتابیس', 'curl' => 'صدا زدن API صوت', 'gd' => 'تغییر اندازهٔ عکس‌ها', 'json' => 'پاسخ‌های JSON', 'mbstring' => 'چاپ عنوان‌های فارسی این گزارش'] as $ext => $why) {
     if (extension_loaded($ext)) ok('php', "افزونهٔ $ext ($why)");
     else bad('php', "افزونهٔ $ext نصب نیست", $why);
 }

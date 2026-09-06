@@ -115,11 +115,17 @@ public_html/htaccess     ← حذف کن (بدون نقطه!)
 
 ## قدم ۵ — بررسی سلامت
 
-این آدرس را در مرورگر باز کن:
+این آدرس را **همراه با `?key=`** در مرورگر باز کن (بدون کلید عمداً 403 می‌گیرید —
+این رفتار درست است):
 
 ```
 https://test.amlak-e-man.ir/tools/health_check.php?key=hk_9f3c71ab60d54e8fa2c17be4d5096e38
 ```
+
+> ⚠️ این آدرس فقط وقتی جواب می‌دهد که `.htaccess` ریشه نسخهٔ **جدید** باشد
+> (با استثناء `tools/health_check.php`). نسخهٔ قدیمی‌تر، کل پوشهٔ `tools/` را
+> یکجا 403 می‌کرد؛ اگر هنوز نسخهٔ قدیمی روی هاست است، `.htaccess` جدید را دوباره
+> آپلود کن (راه‌حل در بخش «🔒 خطای Forbidden» پایین).
 
 یا اگر SSH داری:
 
@@ -155,6 +161,46 @@ php tools/health_check.php
 
 ```
 public_html/tools/health_check.php   ← حذف کن
+```
+
+---
+
+# 🔒 اگر «Forbidden / 403» گرفتی
+
+اول ببین **متن صفحه** چیست؛ این دو حالت کاملاً فرق دارند:
+
+| تو دیدی | یعنی | راه‌حل |
+|---|---|---|
+| متن کوتاه فارسی: `403 — کلید اشتباه است. این پاسخ از خودِ PHP است...` | PHP اجرا شده و **فقط کلید را نگذاشته‌ای** | آدرس را با `?key=...` کامل صدا بزن |
+| صفحهٔ HTML سادهٔ آپاچی «Forbidden / You don't have permission» | رد شدن در لایهٔ `.htaccess` (قبل از PHP) | `.htaccess` ریشه را با نسخهٔ جدید جایگزین کن |
+| درخواست لاگین/چشم‌های نام کاربری و رمز | لایهٔ Basic Auth زیردامنهٔ تست (عمدی) | نام کاربری/رمز `.htpasswd` را وارد کن یا بلوک «قفل ورود» را کامنت کن |
+| صفحهٔ خالی / ۵۰۰ | معمولاً مسیر `AuthUserFile` یا syntax `.htaccess` | موقتاً `.htaccess` را `htaccess.bak` کن و دوباره تست کن |
+
+### چرا قبلاً حتی با کلید هم 403 می‌گرفتیم؟
+
+در `.htaccess` ریشه این قاعده بود:
+
+```apache
+RewriteRule ^(backups|tools|cgi-bin)(/|$) - [F,L]
+```
+
+آپاچی این قاعده را **قبل از** رسیدن درخواست به `tools/` اجرا می‌کند، پس
+`/tools/health_check.php` را همان اول با 403 رد می‌کرد و استثناءِ
+`tools/.htaccess` (که `health_check.php` را آزاد می‌کند) هیچ‌وقت اجرا نمی‌شد.
+حالا `.htaccess` ریشه فقط همان یک فایل را مستثنا می‌کند:
+
+```apache
+RewriteRule ^tools/health_check\.php$ - [L]
+RewriteRule ^(backups|tools|cgi-bin)(/|$) - [F,L]
+```
+
+### تست سریع برای تفکیک دو حالت
+
+```
+https://test.amlak-e-man.ir/api.php                    → نباید 403 خالی بدهد
+https://test.amlak-e-man.ir/tools/stt_probe.php        → 403 «معنی‌دار» (عمداً بسته است)
+https://test.amlak-e-man.ir/tools/health_check.php     → پیام فارسی دربارهٔ کلید
+https://test.amlak-e-man.ir/tools/health_check.php?key=hk_9f3c71ab60d54e8fa2c17be4d5096e38 → گزارش سلامت
 ```
 
 ---

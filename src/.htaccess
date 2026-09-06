@@ -43,8 +43,17 @@ Options -Indexes
 # ---------------------------------------------------------------------
 # ۳) پوشه‌هایی که هرگز نباید مستقیماً خوانده شوند
 # ---------------------------------------------------------------------
+# ⚠️ اصلاح مهم: قبلاً tools/ هم با همین قاعده یکجا بسته می‌شد، یعنی درخواست
+#    /tools/health_check.php قبل از رسیدن به PHP و قبل از اینکه tools/.htaccess
+#    فرصت «استثناء» داشته باشد، همین‌جا با 403 رد می‌شد. استثناءِ
+#    «Require all granted» داخل tools/.htaccess عملاً هرگز اجرا نمی‌شد.
+#    حالا فقط health_check.php را از قاعده مستثنا می‌کنیم؛ بقیهٔ محتوای
+#    backups / tools / cgi-bin همچنان از وب کاملاً بسته است.
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    # استثناء: فقط فایل بررسی سلامت (کلید HEALTH_KEY داخل خود فایل است)
+    RewriteRule ^tools/health_check\.php$ - [L]
+    # هر چیز دیگری در backups / tools / cgi-bin → 403
     RewriteRule ^(backups|tools|cgi-bin)(/|$) - [F,L]
 </IfModule>
 
