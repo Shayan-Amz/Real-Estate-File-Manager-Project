@@ -477,8 +477,21 @@ if ($orKey !== '' && strpos($orKey, 'REPLACE') === false && extension_loaded('cu
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
         curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+        // ⚡ دقیقاً همان ساختاری که api.php می‌فرستد: آرایهٔ مدل‌ها +
+        //    allow_fallbacks. وگرنه تست یک مدل را می‌زد و نتیجه‌اش با رفتار
+        //    واقعی جارویس فرق می‌کرد.
+        $probeModels = array_values(array_unique(array_filter([
+            (strpos($orModel, '/') !== false) ? $orModel : null,
+            'google/gemma-4-26b-a4b-it:free',
+            'google/gemma-4-31b-it:free',
+            'qwen/qwen3-next-80b-a3b-instruct:free',
+            'meta-llama/llama-3.3-70b-instruct:free',
+            'openai/gpt-oss-20b:free',
+        ])));
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            'model' => $probeModel,
+            'model'    => $probeModels[0],
+            'models'   => $probeModels,
+            'provider' => ['allow_fallbacks' => true],
             'messages' => [['role' => 'user', 'content' => 'ok']],
             'max_tokens' => 1,
         ]));
@@ -499,7 +512,9 @@ if ($orKey !== '' && strpos($orKey, 'REPLACE') === false && extension_loaded('cu
         elseif ($code === 200)                     $note = '✅ کار می‌کند';
         elseif ($code === 401)                     $note = 'کلید باطل است';
         elseif ($code === 402)                     $note = 'اعتبار اکانت تمام شده';
-        elseif ($code === 429)                     $note = 'سقف درخواست رایگان پر شده (بدون شارژ: ۵۰ در روز)';
+        elseif ($code === 429)                     $note = (stripos((string) $body, 'free-models-per-day') !== false)
+                ? 'سقف روزانهٔ اکانت پر شده — عوض کردن مدل فایده ندارد؛ شارژ یا صبر تا ۱۲:۰۰ UTC'
+                : 'مدل/upstream شلوغ است — چند دقیقه بعد دوباره امتحان کن (چرخش مدل کمک می‌کند)';
         elseif ($code === 403)                     $note = (strpos($host, 'openrouter.ai') === false) ? 'پروکسی/WAF رد کرده — کلید لزوماً سالم است' : 'کلید دسترسی ندارد';
         elseif ($code === 400 || $code === 404)    $note = 'مدل یا پارامتر نامعتبر';
         echo "   • $host → HTTP $code" . ($note !== '' ? "  ($note)" : '') . "\n";

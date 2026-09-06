@@ -570,10 +570,18 @@ if ($method === 'POST') {
                 error_log('[Jarvis] OPENROUTER_MODEL نامعتبر نادیده گرفته شد: ' . $cfgModel);
                 $cfgModel = '';
             }
+            // 🛡️ چند مدل پشت‌سرهم. طبق راهنمای رسمی OpenRouter، اگر ارائه‌دهندهٔ
+            //    مدل اول rate-limited باشد (همان خطای «temporarily rate-limited
+            //    upstream» که می‌گیری)، خودش مدل بعدی لیست را امتحان می‌کند.
+            //    ترتیب عمدی است: اول مدل‌های چندزبانه که فارسی را خوب می‌فهمند
+            //    و JSON تمیز می‌دهند، نه مدل‌های مخصوص کدنویسی.
             $jarvisModels = array_values(array_unique(array_filter([
                 $cfgModel !== '' ? $cfgModel : null,
-                'google/gemma-4-26b-a4b-it:free',
-                'poolside/laguna-xs-2.1:free',
+                'google/gemma-4-26b-a4b-it:free',            // چندزبانه، ۲۶۲K
+                'google/gemma-4-31b-it:free',                // نسخهٔ قوی‌تر، ۱۴۰+ زبان
+                'qwen/qwen3-next-80b-a3b-instruct:free',     // قوی در استخراج ساختاریافته
+                'meta-llama/llama-3.3-70b-instruct:free',    // چندزبانه، پایدار
+                'openai/gpt-oss-20b:free',                   // سبک، برای وقتی بقیه شلوغ‌اند
             ])));
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
@@ -633,6 +641,10 @@ if ($method === 'POST') {
             $data = [
                 "model"  => $jarvisModels[0],
                 "models" => $jarvisModels,   // ⚡ اگر اولی نرخ‌خور/نبود، خود OpenRouter بعدی را می‌زند
+                // ⚡ لایهٔ ارائه‌دهنده: اگر یک upstream شلوغ بود، همان مدل را روی
+                //    یک ارائه‌دهندهٔ دیگر امتحان کند. پیش‌فرض روشن است ولی صریح
+                //    می‌گذاریم تا به تنظیمات اکانت وابسته نباشد.
+                "provider" => ["allow_fallbacks" => true],
                 "messages" => [
                     ["role" => "system", "content" => $systemPrompt],
                     ["role" => "user", "content" => $userText]
@@ -669,11 +681,13 @@ if ($method === 'POST') {
                 $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep;
 
                 if ($hc === 200) break;   // موفق — بیرون
-                // 🛡️ این خطاها سطح «اکانت» هستند نه سطح «آدرس»؛ هر دو آدرس به
-                //    همان OpenRouter می‌رسند، پس تلاش دوم فقط یک سهمیهٔ دیگر از
-                //    سقف روزانه هدر می‌دهد (درخواست‌های ۴۲۹ هم از سهمیه کم
-                //    می‌شوند). پس حلقه را متوقف می‌کنیم.
-                if (in_array($hc, [401, 402, 429], true)) break;
+                // 🛡️ ۴۰۱ و ۴۰۲ سطح «اکانت» هستند: عوض کردن آدرس کمکی نمی‌کند
+                //    و فقط یک سهمیهٔ دیگر از سقف روزانه هدر می‌دهد (درخواست‌های
+                //    ناموفق هم از سهمیه کم می‌شوند). پس حلقه را می‌بندیم.
+                //    ۴۲۹ را عمداً نمی‌بندیم: «rate-limited upstream» یعنی خودِ
+                //    مدل شلوغ است، و اگر آدرس اول یک پروکسی خراب باشد آدرس رسمی
+                //    با همان لیست مدل شانس دیگری می‌دهد.
+                if (in_array($hc, [401, 402], true)) break;
             }
             // 🛡️ جزئیات هر تلاش فقط در لاگ سرور، نه در پاسخ کلاینت
             error_log('[Jarvis] model=' . $jarvisModels[0] . ' | ' . implode(' | ', $attemptLog));
