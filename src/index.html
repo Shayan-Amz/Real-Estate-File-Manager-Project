@@ -340,6 +340,33 @@
         .compact-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 900; color: var(--text-main); }
         .compact-meta { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; font-weight: bold; }
     </style>
+    <!--
+      ⚡ ریست خودکار Service Worker:
+      اگر آدرس با ?swreset=1 باز شود، همهٔ سرویس‌ورکرها و کش‌های قدیمی
+      پاک می‌شوند و صفحه دوباره از شبکه لود می‌شود. این برای رفع مشکل
+      «صفحهٔ اصلی به‌جای پنل» است (کش قدیمی v2 رفتار اشتباه داشت).
+    -->
+    <script>
+        (function () {
+            try {
+                var p = new URLSearchParams(location.search);
+                if (p.has('swreset') && 'serviceWorker' in navigator) {
+                    Promise.all([navigator.serviceWorker.getRegistrations()])
+                        .then(function (list) {
+                            (list[0] || []).forEach(function (r) { r.unregister(); });
+                            if ('caches' in window) {
+                                return caches.keys().then(function (keys) {
+                                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                                });
+                            }
+                        })
+                        .finally(function () {
+                            location.replace(location.pathname);
+                        });
+                }
+            } catch (e) { /* بی‌صدا */ }
+        })();
+    </script>
 </head>
 <body>
 
