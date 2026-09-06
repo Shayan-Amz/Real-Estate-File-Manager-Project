@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>🧹 ریست کامل کش و سرویس‌ورکر</title>
+<style>
+  body{font-family:Tahoma,sans-serif;background:#f1f5f9;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:15px}
+  .card{background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.12);max-width:600px;padding:28px;text-align:center;border-top:6px solid #1e40af}
+  h1{color:#1e40af;margin-top:0}
+  button{background:#2563eb;color:#fff;border:none;padding:13px 26px;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;margin:8px}
+  code{background:#f1f5f9;padding:3px 8px;border-radius:6px;direction:ltr;display:inline-block;font-size:13px}
+  .ok{color:#15803d}.bad{color:#b91c1c}
+  ol,.steps{text-align:right;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:14px 14px 14px 14px;margin:16px 0}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🧹 ریست کامل کش مرورگر</h1>
+  <p style="color:#334155;">این دکمه <b>همهٔ Service Workerها</b> و <b>همهٔ کش‌های قدیمی</b> را پاک می‌کند و صفحه را از شبکه بارگذاری می‌کند.</p>
+
+  <button onclick="resetNow()">🧹 پاک‌سازی کن و تازه کن</button>
+  <button style="background:#64748b" onclick="window.open('https://test.amlak-e-man.ir/','_blank')">باز کردن سایت در تب جدید</button>
+
+  <div id="status" style="margin:14px 0;font-weight:bold;color:#1e40af;"></div>
+
+  <div class="steps">
+    <b>سپس این ۴ تست را به‌ترتیب باز کن:</b>
+    <ol>
+      <li><code>https://test.amlak-e-man.ir/zz_check2.txt</code><br><span class="ok">باید ببینی: ZZ2-TXT-OK v21</span></li>
+      <li><code>https://test.amlak-e-man.ir/zz_check.php</code><br><span class="ok">باید ببینی: ZZ-PHP-OK 8.x</span></li>
+      <li><code>https://test.amlak-e-man.ir/zz_cfg.php?key=zzcfg-9f3c71ab60d54e8f</code><br><span class="ok">باید «اتصال دیتابیس ✅» را نشان بدهد</span></li>
+      <li><code>https://test.amlak-e-man.ir/diag.php?key=diag-amlak-9f3c71ab60d54e8f</code><br><span class="ok">خروجی کامل را کپی کن و بفرست</span></li>
+    </ol>
+    <b class="bad">اگر در تست ۱ یا ۲ «صفحهٔ اصلی» می‌آید:</b>
+    <ul style="margin:6px 0">
+      <li>باز کردن <b>پنجرهٔ Incognito/Private</b> و همان آدرس → اگر درست شد یعنی فقط کش؛ بعد یک‌بار <code>Ctrl+Shift+R</code>.</li>
+      <li>اگر در Incognito هم بد بود → یعنی فایل‌ها روی هاست غلط‌اند: در File Manager داخل <code>public_html</code> چک کن که <code>zz_check2.txt</code> و <code>zz_check.php</code> واقعاً کنار <code>index.html</code> باشند (نه داخل یک پوشهٔ زیرین).</li>
+    </ul>
+  </div>
+
+  <p style="font-size:12px;color:#64748b;">ابزار موقت — بعد از حل مشکل، فایل‌های zz_* را پاک کن.</p>
+</div>
+
+<script>
+function resetNow() {
+  var st = document.getElementById('status');
+  st.textContent = 'در حال پاک‌سازی...';
+  var finish = function () {
+    st.textContent = '✅ پاک شد! در حال تازه‌سازی...';
+    setTimeout(function () { location.replace('https://test.amlak-e-man.ir/'); }, 900);
+  };
+  try {
+    var jobs = [];
+    if ('serviceWorker' in navigator) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+        return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
+      }));
+    }
+    if ('caches' in window) {
+      jobs.push(caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      }));
+    }
+    Promise.all(jobs).then(finish).catch(function (e) { st.textContent = 'خطا: ' + e; });
+  } catch (e) { st.textContent = 'خطا: ' + e; }
+}
+</script>
+</body>
+</html>
