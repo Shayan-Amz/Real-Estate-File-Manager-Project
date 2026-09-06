@@ -19,15 +19,6 @@ if (isset($_SERVER['HTTP_HOST']) || isset($_SERVER['REQUEST_URI'])) {
 
 require_once __DIR__ . '/config.php';
 
-// ⚡ قفل همپوشانی: اگر کرون‌جاب کوتاه‌تر از خودِ بک‌آپ اجرا شود (مثلاً هر دقیقه)،
-//    اجرای دوم فوراً رد می‌شود تا دیتابیس/دیسک قفل نشود و سرور کند نشود.
-$lockPath = sys_get_temp_dir() . '/amlak_backup.lock';
-$lockFile = fopen($lockPath, 'c');
-if ($lockFile === false || !flock($lockFile, LOCK_EX | LOCK_NB)) {
-    exit("⏭️ یک بک‌آپ دیگر در حال اجراست؛ این اجرا رد شد.\n");
-}
-register_shutdown_function(function () use ($lockFile) { @flock($lockFile, LOCK_UN); @fclose($lockFile); });
-
 $backupDir = __DIR__ . '/backups/';
 if (!is_dir($backupDir)) {
     if (!@mkdir($backupDir, 0750, true) && !is_dir($backupDir)) {

@@ -1,32 +1,52 @@
-/**
- * 🔥 Service Worker — نسخهٔ «خاموشی کامل» (v5)
- * =============================================
- * از این به بعد SW هیچ درخواستی را رهگیری نمی‌کند:
- *   - وقتی نصب می‌شود، همهٔ کش‌های قدیمی (v2/v3/v4) را پاک می‌کند.
- *   - بعد از فعال‌شدن، خودش را unregister می‌کند (خودکشی).
- *   - هیچ fetch handler ندارد → مرورگر همیشه مستقیم از شبکه می‌گیرد.
- *
- * این یعنی «صفحهٔ اصلی به‌جای پنل» و «خروجی خالی» دیگر هرگز از کش نمی‌آید؛
- * هر مشکلی که باشد، همان پاسخ واقعی سرور را می‌بینی.
- *
- * ⚠️ بعد از اینکه سایت بالا آمد، این فایل را هم از هاست پاک کن
- *    (مثل فایل‌های zz_* و diag.php و fix_pin.php).
- */
+const CACHE_NAME = 'amlak-safe-cache-v2';
+const urlsToCache = [
+    './',
+    './index.html'
+    // اگر فایل استایل یا عکسی دارید که همیشه ثابت است، نام آن را اینجا اضافه کنید
+];
 
+// ۱. نصب سریع و ذخیره فایل‌های حیاتی سایت در حافظه گوشی
 self.addEventListener('install', event => {
     self.skipWaiting();
-    // پاک کردن همهٔ کش‌های قبلی
     event.waitUntil(
-        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {})
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.addAll(urlsToCache);
+        })
     );
 });
 
+// ۲. پاک کردن تمام کش‌های خرابِ قبلی
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {})
-            .then(() => self.registration.unregister().catch(() => {}))
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
     );
+    self.clients.claim();
 });
 
-// ⚠️ عمداً هیچ self.addEventListener('fetch', ...) وجود ندارد.
-//    یعنی SW هیچ درخواستی را نمی‌بیند؛ شبکه ۱۰۰٪ مستقیم.
+// ۳. سیستم هوشمند مدیریت درخواست‌ها
+self.addEventListener('fetch', event => {
+    if (!event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
+    // ⚡ درخواست‌های دیتابیس (api.php) را از کش سرویس ورکر مستثنی می‌کنیم
+    if (event.request.url.includes('api.php')) {
+        return;
+    }
+
+    event.respondWith(
+        fetch(event.request).catch(() => {
+            return caches.match(event.request).then(response => {
+                return response || caches.match('./index.html');
+            });
+        })
+    );
+});

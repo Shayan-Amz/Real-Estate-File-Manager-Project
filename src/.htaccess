@@ -1,15 +1,15 @@
 # =====================================================================
-#  املاک من — پیکربندی Apache (نسخهٔ بازیابی)
+#  املاک من — پیکربندی Apache
 # ---------------------------------------------------------------------
-#  🔴 تغییر مهم: بلوک «قفل ورود (Basic Auth)» عمداً حذف شد، چون مسیر
-#     AuthUserFile (…/.htpasswd/public_html/.htpasswd) روی هاست مشکوک بود
-#     و اگر فایل وجود نداشته باشد، آپاچی برای «کل سایت» 500 می‌دهد.
-#     این دقیقاً همان حالتی است که «سایت کلا کار نمی‌کند».
+#  ⚠️ این فایل جایگزین دو فایل قبلی شد:
+#     ۱) `.htaccess` قدیمی که فقط Basic Auth داشت و هیچ محافظتی از
+#        config.php / backups / uploads نمی‌کرد.
+#     ۲) `htaccess` (بدون نقطه) که اصلاً فعال نبود، syntax آپاچی ۲.۲ داشت
+#        و در اولین بلوک، api.php را هم Deny می‌کرد (یعنی اگر روزی نامش
+#        درست می‌شد کل API از کار می‌افتاد). آن فایل حذف شد.
 #
-#     برای برگرداندن ورود با نام کاربری/رمز، بعد از اینکه سایت بالا آمد،
-#     انتهای همین فایل را طبق «بخش ۷» پایین باز کنید.
-#
-#  محافظت‌های مهم (config/backups/uploads/tools) فعال هستند.
+#  نکته: Basic Auth عمداً نگه داشته شده چون این زیردامنهٔ تست است.
+#        برای دامنهٔ اصلی، بلوک «قفل ورود» را حذف یا کامنت کن.
 # =====================================================================
 
 # ۱) جلوگیری از نمایش فهرست فایل‌ها
@@ -32,7 +32,8 @@ Options -Indexes
     </FilesMatch>
 </IfModule>
 
-# api.php باید در دسترس بماند — صریحاً آزاد می‌شود
+# api.php باید در دسترس بماند — صریحاً آزاد می‌شود تا بلوک‌های بالایی
+# (یا هر قاعدهٔ ارثی) آن را نبندند.
 <IfModule mod_authz_core.c>
     <Files "api.php">
         Require all granted
@@ -42,6 +43,12 @@ Options -Indexes
 # ---------------------------------------------------------------------
 # ۳) پوشه‌هایی که هرگز نباید مستقیماً خوانده شوند
 # ---------------------------------------------------------------------
+# ⚠️ اصلاح مهم: قبلاً tools/ هم با همین قاعده یکجا بسته می‌شد، یعنی درخواست
+#    /tools/health_check.php قبل از رسیدن به PHP و قبل از اینکه tools/.htaccess
+#    فرصت «استثناء» داشته باشد، همین‌جا با 403 رد می‌شد. استثناءِ
+#    «Require all granted» داخل tools/.htaccess عملاً هرگز اجرا نمی‌شد.
+#    حالا فقط health_check.php را از قاعده مستثنا می‌کنیم؛ بقیهٔ محتوای
+#    backups / tools / cgi-bin همچنان از وب کاملاً بسته است.
 <IfModule mod_rewrite.c>
     RewriteEngine On
     # استثناء: فقط فایل بررسی سلامت (کلید HEALTH_KEY داخل خود فایل است)
@@ -74,18 +81,8 @@ Options -Indexes
     ExpiresByType image/svg+xml "access plus 1 year"
     ExpiresByType font/woff2  "access plus 1 year"
     ExpiresByType text/css    "access plus 1 month"
-    # ⚡ JS را طولانی کش نمی‌کنیم تا sw.js همیشه به‌روز برسد
-    ExpiresByType application/javascript "access plus 1 hour"
+    ExpiresByType application/javascript "access plus 1 month"
     ExpiresDefault "access plus 2 days"
-</IfModule>
-
-# 🔴 sw.js هرگز کش نشود — این‌کلید رفع «سرویس‌ورکر قدیمی» است
-<IfModule mod_headers.c>
-    <Files "sw.js">
-        Header always set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
-        Header always set Pragma "no-cache"
-        Header always set Expires "0"
-    </Files>
 </IfModule>
 
 # ---------------------------------------------------------------------
@@ -95,23 +92,20 @@ Options -Indexes
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    # فایل‌های PHP هرگز کش نشوند
-    <FilesMatch "\.(php|phtml)$">
-        Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-        Header always set Pragma "no-cache"
-        Header always set Expires "0"
-    </FilesMatch>
 </IfModule>
 
 # ---------------------------------------------------------------------
-# ۷) قفل ورود (Basic Auth) — اختیاری؛ برای زیردامنهٔ تست
+# ۷) قفل ورود (Basic Auth) — فقط برای زیردامنهٔ تست
 # ---------------------------------------------------------------------
-# ⚠️ این بخش فعلاً غیرفعال است (علت: سایت با آن 500 می‌داد).
-#    برای فعال‌کردن بعد از بالا آمدن سایت، خطوط زیر را از حالت کامنت خارج کن
-#    و مسیر AuthUserFile را با مسیر واقعی فایل .htpasswd روی هاستت جایگزین کن.
-#
-# AuthName "Super Admin"
-# AuthType Basic
-# AuthUserFile /home/owihpfoa/domains/test.amlak-e-man.ir/.htpasswd/public_html/.htpasswd
-# Require valid-user
-# ErrorDocument 401 "Unauthorized Access"
+# ⚠️ عمداً فعال نگه داشته شد تا سطح دسترسی فعلی سایت تغییر نکند.
+# ⚠️ مسیر AuthUserFile باید واقعاً روی سرور وجود داشته باشد، وگرنه آپاچی
+#    به‌جای ۴۰۱ خطای ۵۰۰ برمی‌گرداند. مسیر دقیقاً از فایل قبلی نگه داشته شده:
+#    /home/owihpfoa/domains/test.amlak-e-man.ir/.htpasswd/public_html/.htpasswd
+#    (به‌نظر می‌رسد یک «.htpasswd/» اضافی به‌عنوان پوشه در مسیر هست — روی
+#     هاست چک شود که این فایل واقعاً وجود دارد.)
+# ⚠️ برای دامنهٔ اصلی، همین چهار خط را کامنت کن.
+AuthName "Super Admin"
+AuthType Basic
+AuthUserFile /home/owihpfoa/domains/test.amlak-e-man.ir/.htpasswd/public_html/.htpasswd
+Require valid-user
+ErrorDocument 401 "Unauthorized Access"
