@@ -91,11 +91,44 @@ if ($do === 'fixdb') {
             if ((int)$ix['Non_unique'] === 0 && $ix['Key_name'] !== 'PRIMARY') { $uniq = true; break; }
         }
         if ($uniq) { echo "✅ کلید UNIQUE از قبل وجود دارد.\n"; exit; }
-        $pdo->exec("DELETE t1 FROM personal_notes t1 INNER JOIN personal_notes t2 WHERE t1.id > t2.id AND t1.agencyId = t2.agencyId AND t1.username = t2.username");
+
+        // ستون کلید اولیه را از SHOW INDEX پیدا می‌کنیم (به‌جای فرض id)
+        $pk = 'id';
+        foreach ($pdo->query("SHOW INDEX FROM personal_notes") as $ix) {
+            if (($ix['Key_name'] ?? '') === 'PRIMARY') { $pk = $ix['Column_name']; break; }
+        }
+        echo "ℹ️  کلید اولیه: {$pk}\n";
+
+        // جفت‌های تکراری را پیدا کن و برای هر گروه، همه‌چیز جز کمترین id را حذف کن
+        // (نسخهٔ قبلی با «DELETE t1 FROM ... JOIN ...» روی MySQL هاست خطای
+        //  1054 Unknown column 't1.id' می‌داد؛ این روش استاندارد است)
+        $dups = $pdo->query("SELECT agencyId, username, MIN(`$pk`) AS keep_id, COUNT(*) AS c
+                             FROM personal_notes
+                             GROUP BY agencyId, username
+                             HAVING COUNT(*) > 1")->fetchAll();
+        $nGroups = count($dups);
+        $del = $pdo->prepare("DELETE FROM personal_notes
+                              WHERE agencyId = ? AND username = ? AND `$pk` <> ?");
+        $removed = 0;
+        foreach ($dups as $d) {
+            $del->execute([$d['agencyId'], $d['username'], $d['keep_id']]);
+            $removed += (int)$del->rowCount();
+        }
+        echo "ℹ️  {$nGroups} جفت تکراری پیدا شد و {$removed} ردیف حذف شد.\n";
+
         $pdo->exec("ALTER TABLE personal_notes ADD UNIQUE KEY uniq_agency_user (agencyId, username)");
         echo "✅ کلید UNIQUE اضافه شد.\n";
     } catch (Throwable $e) {
         echo "❌ شکست: " . $e->getMessage() . "\n(این پیام را کامل برای من بفرست)\n";
+        // دیاگنوستیک: ساختار واقعی جدول را نشان بده تا دقیق بدانیم مشکل چیست
+        try {
+            echo "── SHOW CREATE TABLE personal_notes ──\n";
+            foreach ($pdo->query("SHOW CREATE TABLE personal_notes") as $r) {
+                foreach ($r as $v) { if (is_string($v) && stripos($v, 'CREATE') === 0) { echo $v . "\n"; } }
+            }
+            echo "── SHOW COLUMNS ──\n";
+            foreach ($pdo->query("SHOW COLUMNS FROM personal_notes") as $c) { echo "  " . $c['Field'] . " : " . $c['Type'] . "\n"; }
+        } catch (Throwable $e2) { echo "(خواندن ساختار هم ناموفق بود: " . $e2->getMessage() . ")\n"; }
     }
     exit;
 }

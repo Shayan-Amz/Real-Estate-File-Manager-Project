@@ -240,13 +240,26 @@ if ($FIX) {
         }
         if (!$__uniq) {
             try {
-                $pdo->exec("DELETE t1 FROM personal_notes t1
-                    INNER JOIN personal_notes t2
-                    WHERE t1.id > t2.id
-                      AND t1.agencyId = t2.agencyId
-                      AND t1.username = t2.username");
+                // ستون کلید اولیه را از SHOW INDEX پیدا می‌کنیم
+                $__pk = 'id';
+                foreach ($pdo->query("SHOW INDEX FROM personal_notes") as $__ix) {
+                    if (($__ix['Key_name'] ?? '') === 'PRIMARY') { $__pk = $__ix['Column_name']; break; }
+                }
+                // حذف تکراری‌ها به‌ازای هر گروه (روش استاندارد؛ نسخهٔ قبلی با
+                // «DELETE t1 FROM ... JOIN ...» روی MySQL هاست 1054 می‌داد)
+                $__dups = $pdo->query("SELECT agencyId, username, MIN(`$__pk`) AS keep_id
+                                       FROM personal_notes
+                                       GROUP BY agencyId, username
+                                       HAVING COUNT(*) > 1")->fetchAll();
+                $__del = $pdo->prepare("DELETE FROM personal_notes
+                                        WHERE agencyId = ? AND username = ? AND `$__pk` <> ?");
+                $__removed = 0;
+                foreach ($__dups as $__d) {
+                    $__del->execute([$__d['agencyId'], $__d['username'], $__d['keep_id']]);
+                    $__removed += (int)$__del->rowCount();
+                }
                 $pdo->exec("ALTER TABLE personal_notes ADD UNIQUE KEY uniq_agency_user (agencyId, username)");
-                ok('fix', 'کلید UNIQUE به personal_notes اضافه شد');
+                ok('fix', "کلید UNIQUE به personal_notes اضافه شد ({$__removed} ردیف تکراری حذف شد)");
                 $dbRepaired = true;
             } catch (Throwable $__e) {
                 bad('fix', 'افزودن UNIQUE ناموفق بود', $__e->getMessage());

@@ -143,7 +143,7 @@ try {
 
     // ⚡ هر بار که ساختار دیتابیس عوض شد این عدد را یکی زیاد کن تا
     //    migration دوباره اجرا شود.
-    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 4);
+    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 5);
 
     try {
         // ⚡ جدول تنظیمات سیستم: مثل rate_limits هیچ‌جا ساخته نمی‌شد، ولی
@@ -217,9 +217,11 @@ try {
             // ⚡ جدول personal_notes روی این دیتابیس از قبل وجود داشت (نسخهٔ
             //    قدیمی که schema_version در آن ثبت نشده بود) ولی بدون کلید UNIQUE.
             //    بدون این اصلاح، saveNotes هر بار یک ردیف جدید می‌ساخت.
-            //    ⚠️ اگر ردیف تکراری (agencyId, username) در جدول هست، هر جفت
-            //    تکراری با DELETE به یکی تقلیل می‌یابد (آخرین ردیف می‌ماند —
-            //    ساده‌ترین گزینهٔ امن؛ در واقع هر کدام آخرین note_text را دارند).
+            //    ⚠️ نسخهٔ اول این بلوک از «DELETE t1 FROM ... JOIN ...» استفاده
+            //    می‌کرد که روی MySQL/MariaDB هاست با خطای
+            //    «1054 Unknown column 't1.id' in 'WHERE'» رد می‌شد. حالا با یک
+            //    روش استاندارد و قابل حمل (حذف به‌ازای هر گروه تکراری) انجام
+            //    می‌شود — روی هر نسخهٔ MySQL/MariaDB کار می‌کند.
             //    این بخش در try/catch است: اگر دیتابیس اجازهٔ ALTER را ندهد،
             //    بقیهٔ migration از کار نمی‌افتد.
             try {
@@ -228,13 +230,25 @@ try {
                     if ((int)$ix['Non_unique'] === 0 && $ix['Key_name'] !== 'PRIMARY') { $__uniq = true; break; }
                 }
                 if (!$__uniq) {
-                    $pdo->exec("DELETE t1 FROM personal_notes t1
-                        INNER JOIN personal_notes t2
-                        WHERE t1.id > t2.id
-                          AND t1.agencyId = t2.agencyId
-                          AND t1.username = t2.username");
+                    // ستون کلید اولیه را از SHOW INDEX پیدا می‌کنیم (انعطاف‌پذیر)
+                    $__pk = 'id';
+                    foreach ($pdo->query("SHOW INDEX FROM personal_notes") as $__ix) {
+                        if (($__ix['Key_name'] ?? '') === 'PRIMARY') { $__pk = $__ix['Column_name']; break; }
+                    }
+                    // جفت‌های تکراری را پیدا کن؛ برای هر جفت فقط کمترین id را نگه می‌داریم
+                    $__dups = $pdo->query("SELECT agencyId, username, MIN(`$__pk`) AS keep_id, COUNT(*) AS c
+                                           FROM personal_notes
+                                           GROUP BY agencyId, username
+                                           HAVING COUNT(*) > 1")->fetchAll();
+                    $__del = $pdo->prepare("DELETE FROM personal_notes
+                                            WHERE agencyId = ? AND username = ? AND `$__pk` <> ?");
+                    $__removed = 0;
+                    foreach ($__dups as $__d) {
+                        $__del->execute([$__d['agencyId'], $__d['username'], $__d['keep_id']]);
+                        $__removed += (int)$__del->rowCount();
+                    }
                     $pdo->exec("ALTER TABLE personal_notes ADD UNIQUE KEY uniq_agency_user (agencyId, username)");
-                    error_log('[api.php] migration: کلید UNIQUE به personal_notes اضافه شد');
+                    error_log('[api.php] migration: ' . $__removed . ' ردیف تکراری حذف و کلید UNIQUE اضافه شد');
                 }
             } catch (Throwable $__u) {
                 error_log('[api.php] migration (UNIQUE personal_notes): ' . $__u->getMessage());
