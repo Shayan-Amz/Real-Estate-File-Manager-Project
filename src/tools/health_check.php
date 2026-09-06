@@ -333,6 +333,28 @@ if ($pdo->query("SHOW TABLES LIKE 'personal_notes'")->rowCount() > 0) {
           : bad('db', 'personal_notes کلید UNIQUE ندارد', 'بدون آن هر ذخیره یک ردیف جدید می‌سازد — برای تعمیر خودکار همین آدرس را با &fix=1 صدا بزن');
 }
 
+// ایندکس‌های جداول داغ. هیچ‌کدام از این جداول روی agencyId ایندکس نداشتند،
+// پس هر کوئری full table scan بود. مهاجرتِ api.php باید اینها را بسازد.
+$__needIdx = [
+    'members'    => ['idx_agency_name'  => 'agencyId,name'],
+    'properties' => ['idx_agencyId'     => 'agencyId',
+                     'idx_status_guest' => 'status,showToGuest'],
+    'demands'    => ['idx_agencyId'     => 'agencyId'],
+];
+foreach ($__needIdx as $__t => $__keys) {
+    if ($pdo->query("SHOW TABLES LIKE " . $pdo->quote($__t))->rowCount() === 0) {
+        meh('db', "جدول $__t نیست، ایندکس‌هایش چک نشد");
+        continue;
+    }
+    $__have = [];
+    foreach ($pdo->query("SHOW INDEX FROM `$__t`") as $__ix) { $__have[$__ix['Key_name']] = true; }
+    foreach ($__keys as $__k => $__c) {
+        isset($__have[$__k])
+            ? ok('db', "$__t.$__k ($__c)")
+            : bad('db', "$__t.$__k وجود ندارد", 'مهاجرت باید در اولین درخواست بسازدش؛ اگر نساخت error_log سرور را ببین');
+    }
+}
+
 // طول ستون ip در rate_limits — کلید ما ۱۵ کاراکتر است
 if ($pdo->query("SHOW TABLES LIKE 'rate_limits'")->rowCount() > 0) {
     foreach ($pdo->query("SHOW COLUMNS FROM rate_limits LIKE 'ip'") as $c) {

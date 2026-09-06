@@ -163,7 +163,7 @@ try {
 
     // ⚡ هر بار که ساختار دیتابیس عوض شد این عدد را یکی زیاد کن تا
     //    migration دوباره اجرا شود.
-    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 5);
+    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 6);
 
     try {
         // ⚡ جدول تنظیمات سیستم: مثل rate_limits هیچ‌جا ساخته نمی‌شد، ولی
@@ -272,6 +272,39 @@ try {
                 }
             } catch (Throwable $__u) {
                 error_log('[api.php] migration (UNIQUE personal_notes): ' . $__u->getMessage());
+            }
+
+            // ⚡ ایندکس‌ها. هیچ‌کدام از جداول داغ روی agencyId ایندکس نداشتند
+            //    (grep روی ADD INDEX/ADD KEY/CREATE INDEX هیچ نتیجه نداد)، پس
+            //    هر کوئری full table scan بود.
+            //    داغ‌ترین کوئریِ برنامه «members WHERE name = ? AND agencyId = ?»
+            //    در خط ۳۳۲ است که روی «هر» درخواست احراز هویت‌شده اجرا می‌شود؛
+            //    ایندکس ترکیبی (agencyId, name) هم آن را پوشش می‌دهد و هم
+            //    «members WHERE agencyId = ?» را.
+            //    هر ALTER در try/catch جداست: اگر یکی شکست خورد (مثلاً ستون
+            //    وجود نداشت یا دیتابیس اجازه نداد)، بقیه از کار نمی‌افتند.
+            //    SHOW INDEX قبل از ALTER لازم است چون MySQL/MariaDB نسخهٔ
+            //    «ADD KEY IF NOT EXISTS» را به‌طور قابل حمل ندارند.
+            $__wantedIndexes = [
+                ['members',    'idx_agency_name',  ['agencyId', 'name']],
+                ['properties', 'idx_agencyId',     ['agencyId']],
+                ['properties', 'idx_status_guest', ['status', 'showToGuest']],
+                ['demands',    'idx_agencyId',     ['agencyId']],
+            ];
+            foreach ($__wantedIndexes as $__wi) {
+                $__tbl = $__wi[0]; $__keyName = $__wi[1]; $__cols = $__wi[2];
+                try {
+                    $__exists = false;
+                    foreach ($pdo->query("SHOW INDEX FROM `$__tbl`") as $__ix) {
+                        if (($__ix['Key_name'] ?? '') === $__keyName) { $__exists = true; break; }
+                    }
+                    if ($__exists) continue;
+                    $__colSql = '`' . implode('`, `', $__cols) . '`';
+                    $pdo->exec("ALTER TABLE `$__tbl` ADD KEY `$__keyName` ($__colSql)");
+                    error_log('[api.php] migration: ایندکس ' . $__keyName . ' روی ' . $__tbl . ' ساخته شد');
+                } catch (Throwable $__ie) {
+                    error_log('[api.php] migration (index ' . $__tbl . '.' . $__keyName . '): ' . $__ie->getMessage());
+                }
             }
 
             // ⚡ ثبت نسخهٔ ساختار تا این بلوک در ریکوئست‌های بعدی رد شود.
