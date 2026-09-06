@@ -54,6 +54,11 @@ define('STT_CONNECT_TIMEOUT', 10);            // سقف زمان اتصال (ث�
 // 🧠 مغز جارویس (OpenRouter)
 // ======================================================================
 define('OPENROUTER_API_KEY', 'sk-or-v1-REPLACE_ME');
-define('OPENROUTER_URL', 'https://ai.shayan-api.ir/api/v1/chat/completions');
-define('OPENROUTER_MODEL', 'laguna-xs-2.1:free');
+// ⚠️ آدرس رسمی OpenRouter. قبلاً اینجا یک پروکسی شخصی بود
+//    (https://ai.shayan-api.ir/...) که «403 Access denied by security policy»
+//    می‌داد. api.php حالا اگر این آدرس جواب نداد، خودش به آدرس رسمی برمی‌گردد.
+define('OPENROUTER_URL', 'https://openrouter.ai/api/v1/chat/completions');
+// ⚠️ شناسهٔ مدل در OpenRouter حتماً «ارائه‌دهنده/مدل» است. مقدار قبلی
+//    «laguna-xs-2.1:free» پیشوند نداشت و نامعتبر بود.
+define('OPENROUTER_MODEL', 'google/gemma-4-26b-a4b-it:free');
 ?>

@@ -547,8 +547,27 @@ if ($method === 'POST') {
             }
 
             // ⚡ آدرس و کلید به config.php منتقل شد (قبلاً hardcoded و داخل گیت بود)
-            $workerUrl = OPENROUTER_URL;
-            $apiKey    = OPENROUTER_API_KEY;
+            $apiKey = defined('OPENROUTER_API_KEY') ? OPENROUTER_API_KEY : '';
+
+            // 🛡️ زنجیرهٔ آدرس‌ها: اول آنچه در config.php است، بعد آدرس رسمی
+            //    OpenRouter. دلیلش: آدرس فعلی یک پروکسی شخصی است
+            //    (ai.shayan-api.ir) که «403 Access denied by security policy»
+            //    می‌دهد — یعنی خودِ پروکسی درخواست را رد می‌کند، نه OpenRouter.
+            //    با این زنجیره، حتی اگر config.php دست‌نخورده بماند کار می‌کند.
+            $jarvisEndpoints = array_values(array_unique(array_filter([
+                (defined('OPENROUTER_URL') && trim(OPENROUTER_URL) !== '') ? trim(OPENROUTER_URL) : null,
+                'https://openrouter.ai/api/v1/chat/completions',
+            ])));
+
+            // 🛡️ زنجیرهٔ مدل‌ها. OpenRouter با آرایهٔ «models» خودش مدل بعدی را
+            //    امتحان می‌کند اگر اولی نرخ‌خور یا در دسترس نبود.
+            //    نکته: شناسهٔ مدل در OpenRouter حتماً «ارائه‌دهنده/مدل» است؛
+            //    مقدار قبلی «laguna-xs-2.1:free» پیشوند نداشت و نامعتبر بود.
+            $jarvisModels = array_values(array_unique(array_filter([
+                (defined('OPENROUTER_MODEL') && trim(OPENROUTER_MODEL) !== '') ? trim(OPENROUTER_MODEL) : null,
+                'google/gemma-4-26b-a4b-it:free',
+                'poolside/laguna-xs-2.1:free',
+            ])));
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
             $systemPrompt = 'شما "جارویس" هستید، دستیار فوق‌هوشمند املاک. 
@@ -605,7 +624,8 @@ if ($method === 'POST') {
 }';
 
             $data = [
-                "model" => OPENROUTER_MODEL,
+                "model"  => $jarvisModels[0],
+                "models" => $jarvisModels,   // ⚡ اگر اولی نرخ‌خور/نبود، خود OpenRouter بعدی را می‌زند
                 "messages" => [
                     ["role" => "system", "content" => $systemPrompt],
                     ["role" => "user", "content" => $userText]
@@ -613,26 +633,39 @@ if ($method === 'POST') {
                 "response_format" => ["type" => "json_object"]
             ];
 
-            $ch = curl_init($workerUrl);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);   // ⚡ قبلاً false بود (این درخواست کلید API را حمل می‌کند)
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, STT_CONNECT_TIMEOUT); // ⚡ قبلاً بی‌نهایت بود و ورکر PHP را اشغال می‌کرد
-            curl_setopt($ch, CURLOPT_TIMEOUT, STT_TIMEOUT);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $apiKey,
-                'HTTP-Referer: https://test.amlak-e-man.ir'
-            ]);
+            $response = null; $httpCode = 0; $curlError = ''; $usedUrl = '';
+            $attemptLog = [];
+            foreach ($jarvisEndpoints as $ep) {
+                $ch = curl_init($ep);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);   // ⚡ قبلاً false بود (این درخواست کلید API را حمل می‌کند)
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, STT_CONNECT_TIMEOUT); // ⚡ قبلاً بی‌نهایت بود و ورکر PHP را اشغال می‌کرد
+                curl_setopt($ch, CURLOPT_TIMEOUT, STT_TIMEOUT);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $apiKey,
+                    'HTTP-Referer: https://test.amlak-e-man.ir',
+                    'X-Title: Amlak Man Jarvis'
+                ]);
 
-            $response  = curl_exec($ch);
-            $httpCode  = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);   // ⚡ باید قبل از curl_close خوانده شود؛ قبلاً بعد از آن خوانده می‌شد و همیشه خالی بود
-            curl_close($ch);
+                $r  = curl_exec($ch);
+                $hc = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $ce = curl_error($ch);   // ⚡ باید قبل از curl_close خوانده شود؛ قبلاً بعد از آن خوانده می‌شد و همیشه خالی بود
+                curl_close($ch);
+
+                $attemptLog[] = (string) parse_url($ep, PHP_URL_HOST) . ' → HTTP ' . $hc . ($ce !== '' ? ' (' . $ce . ')' : '');
+                $response = $r; $httpCode = $hc; $curlError = $ce; $usedUrl = $ep;
+
+                if ($hc === 200) break;          // موفق — بیرون
+                if ($hc === 401) break;          // کلید باطل است؛ آدرس دیگر کمکی نمی‌کند
+            }
+            // 🛡️ جزئیات هر تلاش فقط در لاگ سرور، نه در پاسخ کلاینت
+            error_log('[Jarvis] model=' . $jarvisModels[0] . ' | ' . implode(' | ', $attemptLog));
 
             $aiResult = json_decode($response, true);
             
@@ -663,11 +696,25 @@ if ($method === 'POST') {
                 // ⚡ جزئیات فقط در لاگ سرور؛ پاسخ خام ارائه‌دهنده به کلاینت نشت نمی‌کند
                 error_log('[Jarvis] HTTP ' . $httpCode . ' curlErr=' . $curlError . ' body=' . substr((string) $response, 0, 800));
 
-                $errorReason = 'کد وضعیت: ' . $httpCode;
+                // 🛡️ تشخیص دقیق‌تر: ۴۰۳ از یک پروکسی شخصی با ۴۰۳ از خود
+                //    OpenRouter یکی نیست. اولی یعنی پروکسی/WAF رد کرده،
+                //    دومی یعنی کلید واقعاً باطل است.
+                $failedHost = (string) parse_url((string) $usedUrl, PHP_URL_HOST);
+                $errorReason = 'کد وضعیت: ' . $httpCode . ' از ' . ($failedHost !== '' ? $failedHost : 'نامشخص');
                 if ($curlError !== '') {
                     $errorReason .= ' | قطعی شبکه: ' . $curlError;
-                } elseif ($httpCode === 401 || $httpCode === 403) {
-                    $errorReason .= ' | کلید هوش مصنوعی معتبر نیست.';
+                } elseif ($httpCode === 401) {
+                    $errorReason .= ' | کلید OPENROUTER_API_KEY باطل است.';
+                } elseif ($httpCode === 403) {
+                    $errorReason .= (strpos($failedHost, 'openrouter.ai') === false)
+                        ? ' | پروکسی/WAF درخواست را رد کرده (کلید لزوماً مشکل ندارد).'
+                        : ' | کلید OPENROUTER_API_KEY دسترسی ندارد.';
+                } elseif ($httpCode === 402) {
+                    $errorReason .= ' | اعتبار اکانت OpenRouter تمام شده.';
+                } elseif ($httpCode === 429) {
+                    $errorReason .= ' | سقف درخواست رایگان پر شده (بدون شارژ: ۵۰ درخواست در روز).';
+                } elseif ($httpCode === 400 || $httpCode === 404) {
+                    $errorReason .= ' | مدل «' . $jarvisModels[0] . '» معتبر نیست یا پارامتر نامعتبر است.';
                 }
 
                 echo json_encode(['error' => 'خطا در ارتباط با موتور هوش مصنوعی. (' . $errorReason . ')'], JSON_UNESCAPED_UNICODE);

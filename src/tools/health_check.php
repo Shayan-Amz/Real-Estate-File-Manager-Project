@@ -443,6 +443,87 @@ if (is_file(ROOT . '/stt.php')) {
 
 meh('stt', 'در دسترس بودن واقعی ارائه‌دهنده اینجا چک نشد', 'برای تست واقعی: php tools/stt_probe.php');
 
+/* ═══════════ ۱۰) مغز متنی جارویس (OpenRouter) ═══════════ */
+head('۱۰) مغز متنی جارویس (OpenRouter)');
+
+$orUrl   = defined('OPENROUTER_URL')   ? OPENROUTER_URL   : '';
+$orModel = defined('OPENROUTER_MODEL') ? OPENROUTER_MODEL : '';
+$orKey   = defined('OPENROUTER_API_KEY') ? OPENROUTER_API_KEY : '';
+$OFFICIAL = 'https://openrouter.ai/api/v1/chat/completions';
+
+if ($orKey === '' || strpos($orKey, 'REPLACE') !== false) bad('jarvis', 'OPENROUTER_API_KEY خالی یا placeholder است');
+else ok('jarvis', 'OPENROUTER_API_KEY پر شده (' . substr($orKey, 0, 10) . '…' . substr($orKey, -4) . ')');
+
+if ($orUrl === $OFFICIAL)      ok('jarvis', 'OPENROUTER_URL آدرس رسمی OpenRouter است');
+elseif ($orUrl === '')         meh('jarvis', 'OPENROUTER_URL تعریف نشده', 'api.php خودش به آدرس رسمی برمی‌گردد');
+else bad('jarvis', 'OPENROUTER_URL آدرس رسمی نیست: ' . $orUrl, 'اگر پروکسی شخصی است، api.php بعد از شکست به آدرس رسمی برمی‌گردد');
+
+// شناسهٔ مدل در OpenRouter حتماً «ارائه‌دهنده/مدل» است
+if ($orModel === '') meh('jarvis', 'OPENROUTER_MODEL خالی است', 'api.php از google/gemma-4-26b-a4b-it:free استفاده می‌کند');
+elseif (strpos($orModel, '/') === false) bad('jarvis', "OPENROUTER_MODEL پیشوند ارائه‌دهنده ندارد: $orModel", 'شناسهٔ معتبر شکل «google/gemma-4-26b-a4b-it:free» دارد');
+else ok('jarvis', 'OPENROUTER_MODEL = ' . $orModel);
+
+// ── تست واقعی: یک درخواست کوچک به هر دو آدرس ──
+if ($orKey !== '' && strpos($orKey, 'REPLACE') === false && extension_loaded('curl')) {
+    echo "   (یک درخواست آزمایشی کوچک زده می‌شود — چند ثانیه صبر کن)\n";
+    $probeModel = (strpos($orModel, '/') !== false) ? $orModel : 'google/gemma-4-26b-a4b-it:free';
+    $targets = array_values(array_unique(array_filter([$orUrl, $OFFICIAL])));
+    $results = [];
+    foreach ($targets as $t) {
+        $ch = curl_init($t);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            'model' => $probeModel,
+            'messages' => [['role' => 'user', 'content' => 'ok']],
+            'max_tokens' => 1,
+        ]));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $orKey,
+            'HTTP-Referer: https://test.amlak-e-man.ir',
+            'X-Title: Amlak Man Jarvis',
+        ]);
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $cerr = curl_error($ch);
+        curl_close($ch);
+        $host = (string) parse_url($t, PHP_URL_HOST);
+        $results[$host] = $code;
+        $note = '';
+        if ($cerr !== '')                          $note = 'قطعی شبکه: ' . $cerr;
+        elseif ($code === 200)                     $note = '✅ کار می‌کند';
+        elseif ($code === 401)                     $note = 'کلید باطل است';
+        elseif ($code === 402)                     $note = 'اعتبار اکانت تمام شده';
+        elseif ($code === 429)                     $note = 'سقف درخواست رایگان پر شده (بدون شارژ: ۵۰ در روز)';
+        elseif ($code === 403)                     $note = (strpos($host, 'openrouter.ai') === false) ? 'پروکسی/WAF رد کرده — کلید لزوماً سالم است' : 'کلید دسترسی ندارد';
+        elseif ($code === 400 || $code === 404)    $note = 'مدل یا پارامتر نامعتبر';
+        echo "   • $host → HTTP $code" . ($note !== '' ? "  ($note)" : '') . "\n";
+        if ($code !== 200 && $code !== 0) {
+            echo '     پاسخ: ' . substr((string) $body, 0, 300) . "\n";
+        }
+    }
+    // تفسیر
+    $officialCode = $results['openrouter.ai'] ?? 0;
+    if ($officialCode === 200) {
+        ok('jarvis', 'آدرس رسمی OpenRouter با این کلید کار می‌کند');
+    } elseif ($officialCode === 401) {
+        bad('jarvis', 'کلید OpenRouter باطل است', 'در openrouter.ai → Keys یک کلید تازه بساز');
+    } elseif ($officialCode === 429) {
+        meh('jarvis', 'کلید سالم است ولی سقف رایگان پر شده', 'بدون شارژ ۵۰ درخواست در روز؛ با ۱۰ دلار شارژ می‌شود ۱۰۰۰');
+    } elseif ($officialCode === 0) {
+        meh('jarvis', 'آدرس رسمی چک نشد (قطعی شبکه از سمت هاست)');
+    } else {
+        bad('jarvis', 'آدرس رسمی OpenRouter پاسخ غیرمنتظره داد: HTTP ' . $officialCode);
+    }
+} else {
+    meh('jarvis', 'تست واقعی انجام نشد (کلید نیست یا curl نصب نیست)');
+}
+
 summary();
 
 function summary() {
