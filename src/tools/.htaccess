@@ -1,8 +1,21 @@
-# ⚡ ابزارهای تشخیصی: فقط از خط فرمان قابل اجرا باشند
+# ⚡ ابزارهای تشخیصی: از وب بسته باشند
+# استثناء فقط برای health_check.php که خودش با کلید HEALTH_KEY محافظت می‌شود
+# و فقط می‌خواند (چیزی نمی‌نویسد و رازی چاپ نمی‌کند).
 <IfModule mod_authz_core.c>
-    Require all denied
+    <FilesMatch "\.(php|phtml|phar)$">
+        Require all denied
+    </FilesMatch>
+    <Files "health_check.php">
+        Require all granted
+    </Files>
 </IfModule>
 <IfModule !mod_authz_core.c>
-    Order allow,deny
-    Deny from all
+    <FilesMatch "\.(php|phtml|phar)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <Files "health_check.php">
+        Order allow,deny
+        Allow from all
+    </Files>
 </IfModule>
