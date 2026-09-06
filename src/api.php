@@ -575,19 +575,24 @@ if ($method === 'POST') {
             //    upstream» که می‌گیری)، خودش مدل بعدی لیست را امتحان می‌کند.
             //    ترتیب عمدی است: اول مدل‌های چندزبانه که فارسی را خوب می‌فهمند
             //    و JSON تمیز می‌دهند، نه مدل‌های مخصوص کدنویسی.
-            // ⚠️ ترتیب عمداً این است: اول مدل‌های مطمئن، بعد مدل config.php.
-            //    قبلاً مدل config اول بود و چون مقدارش روی یک مدل منسوخ مانده
-            //    بود، هر بار یک درخواست با ۴۰۰ هدر می‌رفت (سقف رایگان فقط
-            //    ۵۰ درخواست در روز است). مدل config حذف نمی‌شود، فقط به
-            //    عنوان fallback استفاده می‌شود.
-            $jarvisModels = array_values(array_unique(array_filter([
+            // 🎯 انتخاب خودت (OPENROUTER_MODEL) اولویت دارد — اما فقط اگر
+            //    یکی از مدل‌های سالمِ شناخته‌شده باشد. اگر روی یک مدل منسوخ
+            //    مانده باشد، به آخر منتقل می‌شود تا هر بار یک درخواست با
+            //    ۴۰۰ هدر نرود (سقف رایگان فقط ۵۰ درخواست در روز است).
+            $jarvisKnownGood = [
                 'google/gemma-4-26b-a4b-it:free',            // چندزبانه، ۲۶۲K
                 'google/gemma-4-31b-it:free',                // نسخهٔ قوی‌تر، ۱۴۰+ زبان
                 'qwen/qwen3-next-80b-a3b-instruct:free',     // قوی در استخراج ساختاریافته
                 'meta-llama/llama-3.3-70b-instruct:free',    // چندزبانه، پایدار
                 'openai/gpt-oss-20b:free',                   // سبک، برای وقتی بقیه شلوغ‌اند
-                $cfgModel !== '' ? $cfgModel : null,         // انتخاب خودت، به‌عنوان fallback
-            ])));
+            ];
+            if ($cfgModel !== '' && in_array($cfgModel, $jarvisKnownGood, true)) {
+                array_unshift($jarvisKnownGood, $cfgModel);   // انتخاب تو اول
+            } elseif ($cfgModel !== '') {
+                $jarvisKnownGood[] = $cfgModel;               // ناشناخته → fallback
+                error_log('[Jarvis] OPENROUTER_MODEL=' . $cfgModel . ' در لیست مدل‌های سالم نیست؛ به fallback منتقل شد.');
+            }
+            $jarvisModels = array_values(array_unique(array_filter($jarvisKnownGood)));
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
             $systemPrompt = 'شما "جارویس" هستید، دستیار فوق‌هوشمند املاک. 
