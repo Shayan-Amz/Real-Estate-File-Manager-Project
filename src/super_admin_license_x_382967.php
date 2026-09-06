@@ -79,7 +79,10 @@ try {
         if (strlen($newPass) < 6) {
             $msg = "⚠️ رمز باید حداقل ۶ کاراکتر باشد.";
         } else {
-            $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?")->execute([password_hash($newPass, PASSWORD_DEFAULT), $id]);
+            // 🔑 پین دقیقاً همان‌که وارد شده ذخیره می‌شود (A123 → A123).
+            //    رمز «مالک سیستم» (ورود به همین پنل) جدا و از MASTER_PASSWORD_HASH
+            //    است و این بخش اصلاً به آن دست نمی‌زند.
+            $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?")->execute([$newPass, $id]);
             $msg = "🔑 رمز عبور تغییر کرد!";
         }
     }

@@ -121,6 +121,26 @@ function safeUploadRelPath($p) {
     return $p;
 }
 
+/**
+ * 🔑 تطبیق پین/رمز اکانت‌ها (آژانس و مشاور) — «دقیقاً» با همان چیزی که کاربر
+ * گذاشته:
+ *   - اگر در دیتابیس هش bcrypt ذخیره شده (حساب‌های قدیمی) → password_verify
+ *   - اگر پین ساده/متنی ذخیره شده (روش فعلی) → مقایسهٔ دقیق hash_equals
+ * یعنی «A123» فقط با «A123» وارد می‌شود — بدون escape، بدون تبدیل، بدون هش اضافه.
+ *
+ * ⚠️ این تابع فقط برای پین اکانت‌هاست. رمز «مالک سیستم» کاملاً جدا است و
+ *    فقط از MASTER_PASSWORD_HASH (تعریف config.php) می‌آید و دست نمی‌خورد.
+ */
+function pin_matches($stored, $candidate) {
+    if ($stored === null || $stored === '') return false;
+    $stored    = (string)$stored;
+    $candidate = (string)$candidate;
+    if (preg_match('/^\$2[aby]\$\d{2}\$/', $stored) && strlen($stored) === 60) {
+        return password_verify($candidate, $stored);
+    }
+    return hash_equals($stored, $candidate);
+}
+
 function sanitizeInput($data) {
     if (is_string($data)) {
         if (strpos($data, 'data:image') === 0) return $data; 
@@ -658,12 +678,13 @@ if ($method === 'POST') {
             if (!$isFullyAuthenticated) { echo json_encode(['error' => 'غیرمجاز.']); exit; }
             $newPin = $input['newPin'] ?? '';
             if (!$newPin) { echo json_encode(['error' => 'رمز عبور نمی‌تواند خالی باشد']); exit; }
-            $hashed = password_hash($newPin, PASSWORD_DEFAULT);
+            // 🔑 پین دقیقاً همان‌که کاربر گذاشته ذخیره می‌شود (A123 → A123)
+            $newPinValue = $newPin;
 
             if ($userRole === 'مدیر') {
-                $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?")->execute([$hashed, $agencyId]);
+                $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?")->execute([$newPinValue, $agencyId]);
             } else if ($userRole === 'مشاور') {
-                $pdo->prepare("UPDATE members SET pin = ? WHERE name = ? AND agencyId = ?")->execute([$hashed, $userName, $agencyId]);
+                $pdo->prepare("UPDATE members SET pin = ? WHERE name = ? AND agencyId = ?")->execute([$newPinValue, $userName, $agencyId]);
             }
             markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
@@ -674,8 +695,8 @@ if ($method === 'POST') {
             $newPin = $input['newPin'] ?? '';
             if (!$memberId || !$newPin) { echo json_encode(['error' => 'اطلاعات ناقص است.']); exit; }
             
-            $hashed = password_hash($newPin, PASSWORD_DEFAULT);
-            $pdo->prepare("UPDATE members SET pin = ? WHERE id = ? AND agencyId = ?")->execute([$hashed, $memberId, $agencyId]);
+            // 🔑 پین دقیقاً همان‌که تعیین شده ذخیره می‌شود
+            $pdo->prepare("UPDATE members SET pin = ? WHERE id = ? AND agencyId = ?")->execute([$newPin, $memberId, $agencyId]);
             markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
 
@@ -696,7 +717,8 @@ if ($method === 'POST') {
                     exit;
                 }
             }
-            $hashed = !empty($input['adminPin']) ? password_hash($input['adminPin'], PASSWORD_BCRYPT) : '';
+            // 🔑 پین دقیقاً همان‌که در املاک کریتور تعیین شده (بدون هش اضافه)
+            $hashed = (string)($input['adminPin'] ?? '');
             
             $rawDate = $input['expireAt'] ?? '';
             $expireSql = date('Y-m-d H:i:s'); 
@@ -719,7 +741,8 @@ if ($method === 'POST') {
             
             if (strtotime($ag['expireAt']) < time()) { echo json_encode(['error' => 'اشتراک آژانس پایان یافته است.']); exit; }
 
-            $isMatch = (password_get_info($ag['adminPin'])['algo'] === 0) ? ($ag['adminPin'] === $input['pin']) : password_verify($input['pin'], $ag['adminPin']);
+            // 🔑 دقیقاً با همان رمزی که کاربر گذاشته (ساده یا هش قدیمی)
+            $isMatch = pin_matches($ag['adminPin'], $input['pin'] ?? '');
             if (!$isMatch) { echo json_encode(['error' => 'رمز عبور اشتباه است']); exit; }
             
             echo json_encode(['response' => ['success' => true, 'token' => generateSecureToken($reqAgencyId, 'مدیر', $ag['managerName']?:'مدیر', APP_SALT, $ag['plan_type'] ?? 'Basic'), 'managerName' => $ag['managerName'], 'agencyName' => $ag['name'], 'plan' => $ag['plan_type'] ?? 'Basic']]); exit;
@@ -741,7 +764,8 @@ if ($method === 'POST') {
             $mem = $stmt->fetch();
 
             if ($mem) {
-                $isMatch = (password_get_info($mem['pin'])['algo'] === 0) ? ($mem['pin'] === $pin) : password_verify($pin, $mem['pin']);
+                // 🔑 دقیقاً با همان رمزی که مشاور گذاشته (ساده یا هش قدیمی)
+                $isMatch = pin_matches($mem['pin'], $pin);
                 if (!$isMatch) { echo json_encode(['error' => 'رمز عبور اشتباه است.']); exit; }
                 if ($mem['status'] === 'blocked') { echo json_encode(['error' => 'حساب مسدود است.']); exit; }
                 if ($mem['status'] === 'pending') { echo json_encode(['error' => 'حساب در انتظار تایید مدیر است.']); exit; }
@@ -751,7 +775,7 @@ if ($method === 'POST') {
             } else {
                 $mId = uniqid('mem_');
                 $pdo->prepare("INSERT INTO members (id, agencyId, name, role, status, pin, joinedAt, lastSeen) VALUES (?,?,?,?,?,?,?,?)")
-                    ->execute([$mId, $reqAgencyId, $name, 'مشاور', 'pending', password_hash($pin, PASSWORD_BCRYPT), date('Y-m-d H:i:s'), time()]);
+                    ->execute([$mId, $reqAgencyId, $name, 'مشاور', 'pending', $pin, date('Y-m-d H:i:s'), time()]);
                 markSystemUpdated($pdo);
                 echo json_encode(['response' => ['status' => 'pending_sent', 'message' => 'ثبت‌نام انجام شد! منتظر تایید بمانید.', 'agencyName' => $ag['name']]]); exit;
             }

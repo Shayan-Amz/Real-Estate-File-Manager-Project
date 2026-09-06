@@ -14,8 +14,13 @@
  * ── فهرست آژانس‌ها و وضعیت پین ──
  *   https://دامنه/fix_pin.php?key=KEY&do=list
  *
- * ── بازنشانی پین مدیر یک آژانس (با bcrypt ذخیره می‌شود) ──
- *   https://دامنه/fix_pin.php?key=KEY&do=reset&id=کد-آژانس&pin=1234
+ * ── تعیین پین مدیر آژانس — دقیقاً همان‌که می‌نویسی (مثلاً A123) ──
+ *   https://دامنه/fix_pin.php?key=KEY&do=reset&id=کد-آژانس&pin=A123
+ *   (بدون هش؛ ورود با «A123» دقیقاً کار می‌کند)
+ *   برای ذخیرهٔ هش‌شده (قدیمی‌ها): &mode=hash اضافه کن
+ *
+ * ── تست تطبیق پین بدون تغییر دادن ──
+ *   https://دامنه/fix_pin.php?key=KEY&do=check&id=کد-آژانس&pin=A123
  *
  * ── تعمیر کلید UNIQUE جدول یادداشت‌ها (اگر لازم بود) ──
  *   https://دامنه/fix_pin.php?key=KEY&do=fixdb
@@ -51,10 +56,11 @@ if ($do === 'list') {
     foreach ($rows as $r) {
         $pin = $r['adminPin'];
         if ($pin === null || $pin === '') {
-            $info = "⚠️ پین خالی است!";
+            $info = "⚠️ پین تعیین نشده";
+        } elseif (preg_match('/^\$2[aby]\$\d{2}\$/', $pin) && strlen($pin) === 60) {
+            $info = "پین فعال (هش‌شدهٔ قدیمی — با همان رمزت وارد شو، درست کار می‌کند)";
         } else {
-            $algo = password_get_info($pin)['algo'];
-            $info = ($algo === 0) ? "پین ساده (ذخیره‌شده): " . $pin : "پین هش‌شده (bcrypt) ✓";
+            $info = "پین ساده: {$pin}";
         }
         echo "[{$r['id']}] {$r['name']} | مدیر: {$r['managerName']} | پلن: {$r['plan_type']} | انقضا: {$r['expireAt']} | $info\n";
     }
@@ -63,23 +69,41 @@ if ($do === 'list') {
     exit;
 }
 
-/* ── ۲) بازنشانی پین ── */
-if ($do === 'reset') {
+/* ── ۲) تعیین پین (پیش‌فرض: دقیقاً همان‌که نوشتی؛ mode=hash برای قدیمی‌ها) ── */
+if ($do === 'reset' || $do === 'set') {
     $id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)($_GET['id'] ?? ''));
     $pin = (string)($_GET['pin'] ?? '');
-    if ($id === '' || strlen($pin) < 4) {
-        exit("❌ پارامتر ناقص: id و pin (حداقل ۴ کاراکتر) لازم است.\n");
+    $mode = strtolower((string)($_GET['mode'] ?? ''));
+    if ($id === '' || $pin === '') {
+        exit("❌ پارامتر ناقص: id و pin لازم است (pin می‌تواند هر چیزی باشد، مثل A123).\n");
     }
-    $hash = password_hash($pin, PASSWORD_BCRYPT);
+    // 🔑 پیش‌فرض: بدون هش — دقیقاً همان‌که گذاشتی (A123 → A123)
+    $value = ($mode === 'hash') ? password_hash($pin, PASSWORD_BCRYPT) : $pin;
     $st = $pdo->prepare("UPDATE agencies SET adminPin = ? WHERE id = ?");
-    $st->execute([$hash, $id]);
+    $st->execute([$value, $id]);
     if ($st->rowCount() > 0) {
-        echo "✅ پین آژانس «{$id}» با bcrypt ذخیره شد.\n";
+        echo "✅ پین آژانس «{$id}» ذخیره شد" . ($mode === 'hash' ? ' (هش‌شده)' : ' (دقیقاً همین:') . "\n";
         echo "▶ حالا در سایت با همین کد و پین وارد شو: {$pin}\n";
         echo "⚠️ بعد از ورود، همین فایل (fix_pin.php) را از هاست پاک کن.\n";
     } else {
         echo "❌ آژانس «{$id}» پیدا نشد. اول do=list را بزن.\n";
     }
+    exit;
+}
+
+/* ── ۲٫۵) تست تطبیق بدون تغییر ── */
+if ($do === 'check') {
+    $id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)($_GET['id'] ?? ''));
+    $pin = (string)($_GET['pin'] ?? '');
+    $st = $pdo->prepare("SELECT adminPin FROM agencies WHERE id = ?");
+    $st->execute([$id]);
+    $row = $st->fetch();
+    if (!$row) { exit("❌ آژانس «{$id}» پیدا نشد.\n"); }
+    $stored = (string)$row['adminPin'];
+    $isHash = preg_match('/^\$2[aby]\$\d{2}\$/', $stored) && strlen($stored) === 60;
+    $match = $isHash ? password_verify($pin, $stored) : hash_equals($stored, $pin);
+    echo ($match ? "✅ تطبیق: «{$pin}» درست است — با همین وارد می‌شوی.\n"
+                 : "❌ تطبیق: «{$pin}» با پین ذخیره‌شده یکی نیست") . ($isHash ? " (ذخیره‌شده: هش bcrypt)" : " (ذخیره‌شده: " . $stored . ")") . "\n";
     exit;
 }
 
