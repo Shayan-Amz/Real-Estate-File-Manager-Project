@@ -396,44 +396,8 @@ if ($userRole === 'مهمان' && in_array($action, ['saveProperty', 'deleteProp
     http_response_code(403); echo json_encode(['error' => 'غیرمجاز.']); exit;
 }
 
-// 🔑 کلید نسخهٔ دادهٔ خصوصی یک آژانس در sys_config.
-//    conf_key فقط VARCHAR(64) است و agencyId تا ۵۰ کاراکتر مجاز است — ولی آن
-//    اعتبارسنجی فقط در saveAgency انجام می‌شود، پس آژانس‌های قدیمی ممکن است
-//    شناسهٔ بلندتری داشته باشند. برای شناسه‌های بلند از md5 استفاده می‌کنیم
-//    تا هرگز از ۶۴ رد نشویم (خطای MySQL 1406 روی هر نوشتن).
-function dataVersionKey($agencyId) {
-    return 'dv_' . (strlen($agencyId) <= 55 ? $agencyId : substr(md5($agencyId), 0, 32));
-}
-
-// ⚡ قبلاً یک کلید سراسری last_update وجود داشت: هر نوشتنی از هر آژانسی، کش
-//    «همهٔ» کلاینت‌ها را باطل می‌کرد. با N آژانس که هر ۱۵ ثانیه poll می‌کنند،
-//    یک نوشتن = N دانلود کامل. حالا نسخهٔ خصوصی هر آژانس جداست.
-//
-//    $public عمداً پیش‌فرض true است: اگر جایی فراموش شد پارامتر بدهد،
-//    بیش‌ازحد باطل می‌شود (کندتر ولی درست) نه کمتر (دادهٔ کهنه).
-//
-//    ON DUPLICATE KEY UPDATE conf_val = ? (نه VALUES()) تا روی MySQL 8.0.20+
-//    هم که VALUES() را deprecated کرده کار کند.
-function markSystemUpdated($pdo, $agencyId = '', $public = true) {
-    $now = (string) time();
-    $up = $pdo->prepare("INSERT INTO sys_config (conf_key, conf_val) VALUES (?, ?)
-                         ON DUPLICATE KEY UPDATE conf_val = ?");
-    if ($public) {
-        // last_update هم نوشته می‌شود چون پنل مدیریت
-        // (super_admin_license_x_382967.php:58) همان را می‌نویسد و getData باید
-        // هر دو را ببیند — وگرنه تغییر پلن از پنل به کلاینت نمی‌رسد.
-        $up->execute(['last_update', $now, $now]);
-        $up->execute(['dv_public',   $now, $now]);
-    }
-    if ($agencyId !== '') {
-        $up->execute([dataVersionKey($agencyId), $now, $now]);
-    } elseif (!$public) {
-        // حالت ناامن: «خصوصی» ولی بدون آژانس. به‌جای باطل‌نکردن، عمومی باطل
-        // می‌شود تا مبادا دادهٔ کهنه نمایش داده شود.
-        error_log('[api.php] markSystemUpdated: private بدون agencyId → fallback به public');
-        $up->execute(['last_update', $now, $now]);
-        $up->execute(['dv_public',   $now, $now]);
-    }
+function markSystemUpdated($pdo) {
+    $pdo->exec("INSERT INTO sys_config (conf_key, conf_val) VALUES ('last_update', UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE conf_val = UNIX_TIMESTAMP()");
 }
 
 function formatSqlDate($isoDate) {
@@ -448,25 +412,10 @@ function formatSqlDate($isoDate) {
 if ($method === 'GET' || $action === 'getData') {
     if ($action === 'getData') {
         $clientHash = $_SERVER['HTTP_X_DATA_HASH'] ?? '';
-        // ⚡ نسخهٔ «مربوط به همین کلاینت». دادهٔ یک کاربر واردشده = دادهٔ خصوصی
-        //    آژانس خودش + همهٔ دادهٔ عمومی. دادهٔ مهمان = فقط عمومی.
-        //    هر دو کوئری lookup روی کلید اصلی‌اند، پس ارزان‌اند.
-        $__gv = $pdo->query("SELECT conf_key, conf_val FROM sys_config
-                             WHERE conf_key IN ('last_update', 'dv_public')")
-                      ->fetchAll(PDO::FETCH_KEY_PAIR);
-        $__pubPart = ($__gv['last_update'] ?? '') . '.' . ($__gv['dv_public'] ?? '');
-        if ($isFullyAuthenticated && $agencyId !== '') {
-            $__st = $pdo->prepare("SELECT conf_val FROM sys_config WHERE conf_key = ?");
-            $__st->execute([dataVersionKey($agencyId)]);
-            $__pv = $__st->fetchColumn();
-            $serverHash = ($__pv === false ? '0' : $__pv) . '|' . $__pubPart;
-        } else {
-            $serverHash = 'g|' . $__pubPart;
-        }
-        // $__pubPart === '.' یعنی هیچ نسخه‌ای ثبت نشده (دیتابیس تازه)؛ در آن
-        // حالت short-circuit نکن تا کلاینت حتماً یک بار دادهٔ کامل بگیرد.
+        $stmtSys = $pdo->query("SELECT conf_val FROM sys_config WHERE conf_key = 'last_update'");
+        $serverHash = $stmtSys->fetchColumn() ?: '0';
 
-        if ($clientHash === $serverHash && $__pubPart !== '.') { 
+        if ($clientHash === $serverHash && $serverHash !== '0') { 
             echo json_encode(['response' => ['unmodified' => true]]); exit; 
         }
 
@@ -551,7 +500,7 @@ if ($method === 'GET' || $action === 'getData') {
             while($row = $stmt->fetch()) { $out['members']->{$row['id']} = $row; }
         }
         
-        $out['dataHash'] = ($__pubPart !== '.') ? $serverHash : md5(time());
+        $out['dataHash'] = $serverHash !== '0' ? $serverHash : md5(time());
         echo json_encode(['response' => $out], JSON_UNESCAPED_UNICODE); exit;
     }
 }
@@ -880,7 +829,7 @@ if ($method === 'POST') {
             } else if ($userRole === 'مشاور') {
                 $pdo->prepare("UPDATE members SET pin = ? WHERE name = ? AND agencyId = ?")->execute([$newPinValue, $userName, $agencyId]);
             }
-            markSystemUpdated($pdo, $agencyId, false); echo json_encode(['response' => ['success' => true]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
 
         if ($action === 'resetMemberPassword') {
@@ -891,7 +840,7 @@ if ($method === 'POST') {
             
             // 🔑 پین دقیقاً همان‌که تعیین شده ذخیره می‌شود
             $pdo->prepare("UPDATE members SET pin = ? WHERE id = ? AND agencyId = ?")->execute([$newPin, $memberId, $agencyId]);
-            markSystemUpdated($pdo, $agencyId, false); echo json_encode(['response' => ['success' => true]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
 
         if ($action === 'saveAgency') {
@@ -922,7 +871,7 @@ if ($method === 'POST') {
             
             $stmt = $pdo->prepare("INSERT INTO agencies (id, name, city, phone, phone2, managerName, adminPin, createdAt, expireAt) VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), city=VALUES(city), phone=VALUES(phone), phone2=VALUES(phone2), managerName=VALUES(managerName), adminPin=VALUES(adminPin), expireAt=VALUES(expireAt)");
             $stmt->execute([$input['id'], $input['name'], $input['city'], $input['phone'], $input['phone2'], $input['managerName']??'مدیر', $hashed, date('Y-m-d H:i:s'), $expireSql]);
-            markSystemUpdated($pdo, $input['id'] ?? '', true); echo json_encode(['response' => ['success' => true]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
 
         // 🛡️ در هنگام لاگین، پلن آژانس از دیتابیس خوانده شده و در توکن مُهر و موم می‌شود
@@ -970,7 +919,7 @@ if ($method === 'POST') {
                 $mId = uniqid('mem_');
                 $pdo->prepare("INSERT INTO members (id, agencyId, name, role, status, pin, joinedAt, lastSeen) VALUES (?,?,?,?,?,?,?,?)")
                     ->execute([$mId, $reqAgencyId, $name, 'مشاور', 'pending', $pin, date('Y-m-d H:i:s'), time()]);
-                markSystemUpdated($pdo, $reqAgencyId, false);
+                markSystemUpdated($pdo);
                 echo json_encode(['response' => ['status' => 'pending_sent', 'message' => 'ثبت‌نام انجام شد! منتظر تایید بمانید.', 'agencyName' => $ag['name']]]); exit;
             }
         }
@@ -1000,7 +949,7 @@ if ($method === 'POST') {
         if ($action === 'saveMember') {
             if ($userRole !== 'مدیر') { echo json_encode(['error' => 'غیرمجاز']); exit; }
             $pdo->prepare("UPDATE members SET status = ? WHERE id = ? AND agencyId = ?")->execute([$input['status'], $input['id'], $agencyId]);
-            markSystemUpdated($pdo, $agencyId, false); echo json_encode(['response' => ['success' => true]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
 
         if ($action === 'saveProperty') {
@@ -1070,7 +1019,7 @@ if ($method === 'POST') {
                 !empty($input['showToGuest'])?1:0, !empty($input['showPriceGuest'])?1:0, !empty($input['showImagesGuest'])?1:0, 
                 $sqlDate, $input['soldBy']??null, $imgsJson
             ]);
-            markSystemUpdated($pdo, $agencyId, true); echo json_encode(['response' => ['success' => true, 'id' => $id]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true, 'id' => $id]]); exit;
         }
 
         if ($action === 'saveDemand') {
@@ -1086,7 +1035,7 @@ if ($method === 'POST') {
                 $input['desc']??'', $input['followUpDate']??'', $sqlDate
             ]);
             
-            markSystemUpdated($pdo, $agencyId, false); echo json_encode(['response' => ['success' => true, 'id' => $id]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true, 'id' => $id]]); exit;
         }
 
         if (in_array($action, ['deleteProperty', 'deleteDemand', 'deleteMember'])) {
@@ -1116,7 +1065,7 @@ if ($method === 'POST') {
                 }
             }
             $pdo->prepare("DELETE FROM {$table} WHERE id = ? AND agencyId = ?")->execute([$id, $agencyId]);
-            markSystemUpdated($pdo, $agencyId, $table === 'properties'); echo json_encode(['response' => ['success' => true]]); exit;
+            markSystemUpdated($pdo); echo json_encode(['response' => ['success' => true]]); exit;
         }
         
     } catch (PDOException $e) {
