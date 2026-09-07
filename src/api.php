@@ -163,7 +163,7 @@ try {
 
     // ⚡ هر بار که ساختار دیتابیس عوض شد این عدد را یکی زیاد کن تا
     //    migration دوباره اجرا شود.
-    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 6);
+    if (!defined('SCHEMA_VERSION')) define('SCHEMA_VERSION', 7);
 
     try {
         // ⚡ جدول تنظیمات سیستم: مثل rate_limits هیچ‌جا ساخته نمی‌شد، ولی
@@ -290,6 +290,9 @@ try {
                 ['properties', 'idx_agencyId',     ['agencyId']],
                 ['properties', 'idx_status_guest', ['status', 'showToGuest']],
                 ['demands',    'idx_agencyId',     ['agencyId']],
+                // fix27: ordered public pages and per-agency public counts.
+                ['properties', 'idx_guest_page', ['status', 'showToGuest', 'isVIP', 'date', 'id']],
+                ['properties', 'idx_agency_guest_page', ['agencyId', 'status', 'showToGuest', 'isVIP', 'date', 'id']],
             ];
             foreach ($__wantedIndexes as $__wi) {
                 $__tbl = $__wi[0]; $__keyName = $__wi[1]; $__cols = $__wi[2];
@@ -383,12 +386,12 @@ if (!empty($authToken) && strpos($authToken, '.') !== false) {
 //    ذاتاً عمومی‌اند:
 //      loginManager / loginConsultant → خودِ ورود
 //      saveAgency                     → ثبت‌نام آژانس جدید
-//      getData                        → نمای عمومی. مهمان بدون توکن این را
-//          صدا می‌زند: index.html:2082 → startListeningToData → fetchAllData.
-//          اگر اینجا استثنا نمی‌شد، صفحهٔ فرود مهمان می‌شکست.
+//      getGuestProperties / getGuestAgencies → صفحات عمومیِ محدودشده (fix27).
+//      getData → برای کلاینت مهمان قدیمی، فقط پیامِ بارگذاری دوباره می‌دهد.
+//          مدیر/مشاور همچنان دادهٔ آژانس خودشان را از آن می‌گیرند.
 //    ping عمداً استثنا «نیست»: فرانت فقط برای کاربر واردشده پینگ می‌فرستد
 //    (index.html:3789 شرط up.role !== 'مهمان' دارد).
-if (!$isFullyAuthenticated && !in_array($action, ['loginManager', 'loginConsultant', 'saveAgency', 'getData'], true)) {
+if (!$isFullyAuthenticated && !in_array($action, ['loginManager', 'loginConsultant', 'saveAgency', 'getData', 'getGuestProperties', 'getGuestAgencies'], true)) {
     http_response_code(403); echo json_encode(['error' => 'نشست شما منقضی شده یا نامعتبر است. لطفاً دوباره وارد شوید.']); exit;
 }
 
@@ -406,11 +409,40 @@ function formatSqlDate($isoDate) {
     return $ts ? date('Y-m-d H:i:s', $ts) : date('Y-m-d H:i:s');
 }
 
+// fix27: new public endpoints always use the public projection, even if a token
+// is present. Never accept X-Agency-ID as an agency selector for guest search.
+if (in_array($action, ['getGuestProperties', 'getGuestAgencies'], true)) {
+    if ($method !== 'GET') {
+        header('Allow: GET'); http_response_code(405);
+        echo json_encode(['error' => 'روش درخواست مجاز نیست.'], JSON_UNESCAPED_UNICODE); exit;
+    }
+    if (!is_file(__DIR__ . '/guest_api.php')) {
+        http_response_code(503);
+        echo json_encode(['error' => 'نصب بخش مهمان کامل نیست؛ فایل guest_api.php را بارگذاری کنید.'], JSON_UNESCAPED_UNICODE); exit;
+    }
+    define('AMLAK_GUEST_API', true);
+    require_once __DIR__ . '/guest_api.php';
+    try {
+        $guestPage = guestReadPage($pdo, $action === 'getGuestAgencies' ? 'agencies' : 'properties', $_GET, $_SERVER['HTTP_X_DATA_HASH'] ?? '');
+        echo json_encode(['response' => $guestPage], JSON_UNESCAPED_UNICODE);
+    } catch (InvalidArgumentException $e) {
+        http_response_code(400);
+        echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
 // ==========================================
 // GET METHODS
 // ==========================================
 if ($method === 'GET' || $action === 'getData') {
     if ($action === 'getData') {
+        // Old guest clients must refresh, not silently search a truncated page.
+        // Keeping the old full-country endpoint would retain the original bottleneck.
+        if (!$isFullyAuthenticated || !$agencyId || !in_array($userRole, ['مدیر', 'مشاور'], true)) {
+            http_response_code(409);
+            echo json_encode(['error' => 'نسخهٔ جستجوی مهمان تغییر کرده است؛ صفحه را دوباره بارگذاری کنید.', 'code' => 'guest_client_upgrade'], JSON_UNESCAPED_UNICODE); exit;
+        }
         $clientHash = $_SERVER['HTTP_X_DATA_HASH'] ?? '';
         $stmtSys = $pdo->query("SELECT conf_val FROM sys_config WHERE conf_key = 'last_update'");
         $serverHash = $stmtSys->fetchColumn() ?: '0';
@@ -422,7 +454,7 @@ if ($method === 'GET' || $action === 'getData') {
         $out = ['agencies' => (object)[], 'properties' => (object)[], 'demands' => (object)[], 'members' => (object)[]];
         
         // fix26: مدیر/مشاور فقط اطلاعات آژانس خودشان را مصرف می‌کنند؛
-        // فهرست سراسری آژانس‌ها همچنان فقط برای نمای مهمان ارسال می‌شود.
+        // فهرست عمومی مهمان از endpoint صفحه‌بندی‌شدهٔ جدا می‌آید (fix27).
         if ($isFullyAuthenticated && $userRole === 'مدیر') {
             $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, managerName, expireAt, createdAt, plan_type FROM agencies WHERE id = ?");
             $stmt->execute([$agencyId]);
@@ -431,13 +463,6 @@ if ($method === 'GET' || $action === 'getData') {
             $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, plan_type FROM agencies WHERE id = ?");
             $stmt->execute([$agencyId]);
             if($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
-        } else {
-            $stmt = $pdo->query("SELECT id, name, city, phone, phone2, plan_type FROM agencies");
-            while($row = $stmt->fetch()) { 
-                $maskedId = 'ag_' . substr(hash('sha256', $row['id'] . APP_SALT), 0, 8);
-                $row['id'] = $maskedId;
-                $out['agencies']->{$maskedId} = $row; 
-            }
         }
         
         if ($isFullyAuthenticated && $agencyId) {
@@ -445,8 +470,6 @@ if ($method === 'GET' || $action === 'getData') {
             // همهٔ فایل‌های خود آژانس (حتی مخفی/واگذارشده) بدون محدودیت باقی می‌مانند.
             $stmt = $pdo->prepare("SELECT * FROM properties WHERE agencyId = ?");
             $stmt->execute([$agencyId]);
-        } else {
-            $stmt = $pdo->query("SELECT * FROM properties WHERE status = 'موجود' AND showToGuest = 1");
         }
         
         while($row = $stmt->fetch()) { 

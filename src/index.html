@@ -1313,9 +1313,11 @@
                             <div class="input-wrapper"><span class="input-icon">📐</span><input type="tel" id="filter-guest-max-area" dir="ltr" oninput="this.value = this.value.replace(/[^0-9]/g, ''); window.currentPage.guestAll = 1; renderGuestAllProperties()" placeholder="حداکثر متراژ" style="font-weight: bold; color: var(--text-main);" /></div>
                         </div>
                     </div>
+                    <div id="status-guest-all" role="status" aria-live="polite" class="hidden" style="padding:12px;"></div>
                     <div id="guest-search-container"></div>
                     
-                    <div id="pagination-guest-all" class="hidden fade-in" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+                    <div id="pagination-guest-all" class="hidden fade-in" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+                        <button id="btn-first-guest-all" onclick="guestFirstPage('guestAll')" class="btn-modern btn-modern-outline" style="width:auto;margin:0;">ابتدا</button>
                         <button id="btn-prev-guest-all" onclick="changePage('guestAll', -1)" class="btn-modern btn-modern-outline" style="width: auto; margin: 0;">قبلی</button>
                         <span id="page-info-guest-all" style="font-size: 14px; font-weight: bold; color: var(--text-main);">صفحه ۱ از ۱</span>
                         <button id="btn-next-guest-all" onclick="changePage('guestAll', 1)" class="btn-modern" style="width: auto; margin: 0; box-shadow: none;">بعدی</button>
@@ -1325,7 +1327,14 @@
                 <!-- لیست آژانس‌های مهمان -->
                 <div id="guest-agencies-view" class="fade-in hidden">
                     <div class="tools-card"><div class="input-wrapper"><span class="input-icon">🔍</span><input type="text" id="search-guest-agencies" oninput="renderGuestAgencies()" placeholder="جستجو بر اساس نام آژانس یا نام شهر..." /></div></div>
+                    <div id="status-guest-agencies" role="status" aria-live="polite" class="hidden" style="padding:12px;"></div>
                     <div id="guest-agencies-container"></div>
+                    <div id="pagination-guest-agencies" class="hidden fade-in" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:20px;padding:16px;background:var(--bg-card);border-radius:12px;border:1px solid var(--border);">
+                        <button id="btn-first-guest-agencies" onclick="guestFirstPage('guestAgencies')" class="btn-modern btn-modern-outline" style="width:auto;margin:0;">ابتدا</button>
+                        <button id="btn-prev-guest-agencies" onclick="changePage('guestAgencies', -1)" class="btn-modern btn-modern-outline" style="width:auto;margin:0;">قبلی</button>
+                        <span id="page-info-guest-agencies" style="font-weight:bold;">صفحه ۱</span>
+                        <button id="btn-next-guest-agencies" onclick="changePage('guestAgencies', 1)" class="btn-modern" style="width:auto;margin:0;">بعدی</button>
+                    </div>
                 </div>
                 
                 <!-- فایل‌های آژانس مهمان -->
@@ -1339,9 +1348,11 @@
                             <button onclick="switchTab('guest-agencies')" class="btn-modern" style="background: rgba(255,255,255,0.2); box-shadow:none; padding: 8px 16px; font-size: 13px; width: auto; margin:0;">بازگشت 🔙</button>
                         </div>
                     </div>
+                    <div id="status-guest-agency" role="status" aria-live="polite" class="hidden" style="padding:12px;"></div>
                     <div id="guest-properties-container"></div>
                     
-                    <div id="pagination-guest-agency" class="hidden fade-in" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+                    <div id="pagination-guest-agency" class="hidden fade-in" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+                        <button id="btn-first-guest-agency" onclick="guestFirstPage('guestAgency')" class="btn-modern btn-modern-outline" style="width:auto;margin:0;">ابتدا</button>
                         <button id="btn-prev-guest-agency" onclick="changePage('guestAgency', -1)" class="btn-modern btn-modern-outline" style="width: auto; margin: 0;">قبلی</button>
                         <span id="page-info-guest-agency" style="font-size: 14px; font-weight: bold; color: var(--text-main);">صفحه ۱ از ۱</span>
                         <button id="btn-next-guest-agency" onclick="changePage('guestAgency', 1)" class="btn-modern" style="width: auto; margin: 0; box-shadow: none;">بعدی</button>
@@ -1454,6 +1465,7 @@
 
     <script src="assets/jalalidatepicker.min.js"></script>
     <script src="assets/chart.umd.js"></script>
+    <script src="assets/guest-browser.js?v=fix27"></script>
 
     
     <script>
@@ -1491,7 +1503,7 @@
         // ⚡ آدرس ارتباطی برای اتصال به فایل جدید هاست شما
         const API_URL = 'api.php';
         
-        window.currentPage = { properties: 1, guestAll: 1, guestAgency: 1, demands: 1 };
+        window.currentPage = { properties: 1, guestAll: 1, guestAgency: 1, guestAgencies: 1, demands: 1 };
         const ITEMS_PER_PAGE = 20;
       // ⚡ مدیریت حالت فشرده و کامل
         window.currentViewMode = localStorage.getItem('amlakViewMode') || 'full';
@@ -1836,7 +1848,7 @@
             });
         };
 
-        window.changePage = function(type, dir) { window.currentPage[type] += dir; window.scrollTo({ top: 0, behavior: 'smooth' }); if (type === 'properties') window.renderProperties(); if (type === 'guestAll') window.renderGuestAllProperties(); if (type === 'guestAgency') window.renderGuestProperties(); if (type === 'demands') window.renderDemands(); };
+        window.changePage = function(type, dir) { if (['guestAll', 'guestAgency', 'guestAgencies'].includes(type)) { window.guestMovePage(type, dir); return; } window.currentPage[type] += dir; window.scrollTo({ top: 0, behavior: 'smooth' }); if (type === 'properties') window.renderProperties(); if (type === 'guestAll') window.renderGuestAllProperties(); if (type === 'guestAgency') window.renderGuestProperties(); if (type === 'demands') window.renderDemands(); };
         window.viewMatchedProperty = function(id) { window.highlightedId = id; document.getElementById('search-input').value = ''; document.getElementById('filter-usage').value = 'همه'; document.getElementById('filter-deal-type').value = 'همه'; document.getElementById('filter-status').value = 'موجود'; window.switchTab('list'); setTimeout(() => { const card = document.getElementById('card-' + id); if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.style.transition = '0.5s'; card.style.transform = 'scale(1.02)'; card.style.boxShadow = '0 0 30px 10px rgba(16, 185, 129, 0.4)'; setTimeout(() => { card.style.transform = 'scale(1)'; card.style.boxShadow = card.classList.contains('vip-card') ? '0 4px 12px rgba(251, 191, 36, 0.15)' : '0 2px 8px rgba(0,0,0,0.04)'; window.highlightedId = null; }, 3000); } }, 300); };
         
         window.switchAuthTab = function(tab) {
@@ -1861,6 +1873,7 @@
             if (tab === 'guest-search') window.renderGuestAllProperties();
             if (tab === 'guest-agencies') window.renderGuestAgencies();
             if (tab === 'guest-properties') window.renderGuestProperties();
+            if (userProfile?.role === 'مهمان' && !['guest-search', 'guest-agencies', 'guest-properties'].includes(tab) && guestPager) guestPager.suspend();
         };
 
         window.toggleDarkMode = function() { document.body.classList.toggle('dark'); localStorage.setItem('amlakDarkMode', document.body.classList.contains('dark')); document.getElementById('theme-toggle').innerText = document.body.classList.contains('dark') ? '☀️' : '🌙'; };
@@ -2001,15 +2014,16 @@
 }
 
         async function fetchAllData() {
+            if (userProfile && userProfile.role === 'مهمان') return refreshGuestActiveView();
             try { const data = await apiCall('getData'); if (data.unmodified) return; lastSyncHash = data.dataHash || ""; localStorage.setItem('amlakDataCache', JSON.stringify(data)); processData(data); isOnline = true; } 
             catch (e) { isOnline = false; const cached = localStorage.getItem('amlakDataCache'); if (cached) processData(JSON.parse(cached)); }
         }
 
         function processData(data) {
+            // fix27: never feed the old shared offline/full-dataset cache into guest search.
+            if (userProfile && userProfile.role === 'مهمان') return;
             allAgencies = Object.values(data.agencies || {});
-            if (userProfile && userProfile.role === 'مهمان') {
-                allGuestProperties = Object.values(data.properties || {}).filter(p => p.status === 'موجود'); window.renderGuestAgencies(); if(selectedAgencyIdForGuest) window.renderGuestProperties(); window.renderGuestAllProperties();
-            } else if (userProfile) {
+            if (userProfile) {
                 // ⚡ دیوار بتنی: هر کاربر فقط اطلاعات آژانس خودش را می‌بیند
                 properties = Object.values(data.properties || {}).filter(p => p.agencyId === userProfile.agencyId);
                 demands = Object.values(data.demands || {}).filter(d => d.agencyId === userProfile.agencyId);
@@ -2042,11 +2056,11 @@
             }
         }
 
-        window.addEventListener('offline', () => { isOnline = false; window.showToast('⚠️ اینترنت قطع شد! برنامه با حافظه آفلاین کار می‌کند.'); });
-        window.addEventListener('online', () => { isOnline = true; window.showToast('✅ اینترنت وصل شد! اطلاعات همگام شد.'); fetchAllData(); });
+        window.addEventListener('offline', () => { isOnline = false; window.showToast(userProfile?.role === 'مهمان' ? '⚠️ اینترنت قطع شد؛ جستجو و صفحهٔ تازه به اتصال نیاز دارد.' : '⚠️ اینترنت قطع شد! برنامه با حافظه آفلاین کار می‌کند.'); });
+        window.addEventListener('online', () => { isOnline = true; window.showToast(userProfile?.role === 'مهمان' ? '✅ اینترنت وصل شد؛ در حال به‌روزرسانی صفحه…' : '✅ اینترنت وصل شد! اطلاعات همگام شد.'); fetchAllData(); });
 
         function boot() { if (userProfile) { checkSubscriptionAndLoad(); } else { document.getElementById('landing-view').classList.remove('hidden'); document.getElementById('auth-view').classList.add('hidden'); document.getElementById('main-app').classList.add('hidden'); } }
-        boot();
+        // fix27: boot runs at the end of this script, after guest handlers exist.
 
         async function checkSubscriptionAndLoad() {
             if(userProfile.role === 'مهمان') { document.getElementById('landing-view').classList.add('hidden'); document.getElementById('auth-view').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden'); setupAppUI(); startListeningToData(); return; }
@@ -2066,7 +2080,7 @@
                 //}
             //}, 20000); // ⚡ اعلام حضور هر ۲۰ ثانیه
         }
-        document.addEventListener("visibilitychange", () => { if (document.hidden) { if (syncInterval) clearInterval(syncInterval); } else { if (userProfile) { fetchAllData(); syncInterval = setInterval(fetchAllData, 15000); } } });
+        document.addEventListener("visibilitychange", () => { if (document.hidden) { if (syncInterval) clearInterval(syncInterval); if (userProfile?.role === 'مهمان' && guestPager) guestPager.suspend(); } else { if (userProfile) { fetchAllData(); syncInterval = setInterval(fetchAllData, 15000); } } });
 
         window.handleGuestLogin = async function(e) { 
             if(e) e.preventDefault(); 
@@ -2589,107 +2603,142 @@
             if (maxRentCont) maxRentCont.classList.toggle('hidden', !isRent);
         };
 
-        window.renderGuestAllProperties = function() { 
-            const container = document.getElementById('guest-search-container'); if(!container) return; 
-            const s = window.normalizeText(document.getElementById('search-guest-all').value.trim()); 
-            const f = { 
-                u: document.getElementById('filter-guest-usage').value, 
-                d: document.getElementById('filter-guest-deal').value, 
-                minA: document.getElementById('filter-guest-min-area').value, 
-                maxA: document.getElementById('filter-guest-max-area').value,
-                minP: document.getElementById('filter-guest-min-price') ? document.getElementById('filter-guest-min-price').value.replace(/,/g, '') : '',
-                maxP: document.getElementById('filter-guest-max-price') ? document.getElementById('filter-guest-max-price').value.replace(/,/g, '') : '',
-                minR: document.getElementById('filter-guest-min-rent') ? document.getElementById('filter-guest-min-rent').value.replace(/,/g, '') : '',
-                maxR: document.getElementById('filter-guest-max-rent') ? document.getElementById('filter-guest-max-rent').value.replace(/,/g, '') : ''
-            }; 
-            
-            const filterHash = s + JSON.stringify(f);
-            if (window.lastFilters && window.lastFilters.guestAll !== filterHash) { window.currentPage.guestAll = 1; window.lastFilters.guestAll = filterHash; }
-            else if (!window.lastFilters) window.lastFilters = { guestAll: filterHash };
-
-            let props = allGuestProperties.filter(p => { 
-                let match = true; 
-                if(s) match = [p.city, p.location, p.usage, p.dealType, p.description].some(v => window.normalizeText(v).includes(s)); 
-                if(f.u !== 'همه') match = match && p.usage === f.u; 
-                if(f.d !== 'همه') match = match && p.dealType === f.d; 
-                if(f.minA) match = match && p.area >= Number(f.minA); 
-                if(f.maxA) match = match && p.area <= Number(f.maxA); 
-                
-                // ⚡ فیلتر هوشمند قیمت
-                const pr = p.dealType === 'فروش' ? (p.price || 0) : (p.deposit || 0); 
-                if (f.minP && pr < Number(f.minP)) match = false; 
-                if (f.maxP && pr > Number(f.maxP)) match = false; 
-                
-                // ⚡ فیلتر هوشمند اجاره
-                if (f.minR || f.maxR) {
-                    if (p.dealType !== 'رهن و اجاره') match = false; 
-                    else {
-                        const r = p.rent || 0;
-                        if (f.minR && r < Number(f.minR)) match = false;
-                        if (f.maxR && r > Number(f.maxR)) match = false;
-                    }
-                }
-                
-                return match; 
-            }).sort((a, b) => (b.isVIP ? 1 : -1) || new Date(b.date).getTime() - new Date(a.date).getTime()); 
-            
-            const pagEl = document.getElementById('pagination-guest-all');
-            if(props.length === 0) { container.innerHTML = `<div class="empty-state pop-in"><span>🏚️</span><p style="font-weight:bold; font-size:18px;">ملکی یافت نشد.</p></div>`; pagEl.classList.add('hidden'); return; } 
-            
-            const totalPages = Math.ceil(props.length / ITEMS_PER_PAGE) || 1;
-            if (window.currentPage.guestAll > totalPages) window.currentPage.guestAll = totalPages;
-            const start = (window.currentPage.guestAll - 1) * ITEMS_PER_PAGE;
-            
-            let htmlStr = ''; 
-            props.slice(start, start + ITEMS_PER_PAGE).forEach(prop => { htmlStr += generateCardHtml(prop, 'guest'); }); 
-            container.innerHTML = htmlStr; 
-
-            if (totalPages > 1) {
-                pagEl.classList.remove('hidden'); document.getElementById('page-info-guest-all').innerText = `صفحه ${window.currentPage.guestAll} از ${totalPages}`;
-                document.getElementById('btn-prev-guest-all').disabled = window.currentPage.guestAll === 1; document.getElementById('btn-next-guest-all').disabled = window.currentPage.guestAll === totalPages;
-            } else { pagEl.classList.add('hidden'); }
+        // fix27: three independent, bounded guest views. Only the visible view polls.
+        const guestViews = {
+            guestAll: { view: 'guest-search-view', container: 'guest-search-container', suffix: 'guest-all', action: 'getGuestProperties' },
+            guestAgencies: { view: 'guest-agencies-view', container: 'guest-agencies-container', suffix: 'guest-agencies', action: 'getGuestAgencies' },
+            guestAgency: { view: 'guest-properties-view', container: 'guest-properties-container', suffix: 'guest-agency', action: 'getGuestProperties' }
         };
+        let selectedGuestAgency = null;
+        const guestRenderKeys = {};
+        function guestActiveView() {
+            if (!userProfile || userProfile.role !== 'مهمان' || document.hidden) return null;
+            return Object.keys(guestViews).find(key => !document.getElementById(guestViews[key].view).classList.contains('hidden')) || null;
+        }
+        function guestPlainText(value) {
+            const entities = { amp: '&', lt: '<', gt: '>', quot: '"', '#039': "'", '#39': "'", apos: "'" };
+            return String(value ?? '').replace(/&(amp|lt|gt|quot|#039|#39|apos);/g, (_, name) => entities[name]);
+        }
+        function guestEscape(value) {
+            return guestPlainText(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+        }
+        function guestFiltersForView(view) {
+            const value = id => document.getElementById(id)?.value.trim() || '';
+            if (view === 'guestAgencies') return { q: value('search-guest-agencies') };
+            if (view === 'guestAgency') return { agency: selectedGuestAgency?.selector || '' };
+            const isRent = value('filter-guest-deal') === 'رهن و اجاره';
+            return {
+                q: value('search-guest-all'), usage: value('filter-guest-usage'), deal: value('filter-guest-deal'),
+                minArea: value('filter-guest-min-area'), maxArea: value('filter-guest-max-area'),
+                minPrice: value('filter-guest-min-price'), maxPrice: value('filter-guest-max-price'),
+                minRent: isRent ? value('filter-guest-min-rent') : '', maxRent: isRent ? value('filter-guest-max-rent') : ''
+            };
+        }
+        function guestCollectModels(snapshots, currentView) {
+            const agencyMap = new Map(), propertyMap = new Map();
+            // Current view wins duplicates. Keep only the last page of each view,
+            // so gallery/details/phone lookups work without a growing country cache.
+            [...Object.keys(guestViews).filter(key => key !== currentView), currentView].forEach(key => {
+                const page = snapshots[key];
+                Object.values(page?.agencies || {}).forEach(agency => agencyMap.set(agency.id, { ...agencyMap.get(agency.id), ...agency }));
+                Object.values(page?.properties || {}).forEach(prop => propertyMap.set(prop.id, prop));
+            });
+            allAgencies = [...agencyMap.values()];
+            allGuestProperties = [...propertyMap.values()];
+        }
+        function guestRenderPage(view, state, snapshots) {
+            guestCollectModels(snapshots, view);
+            const config = guestViews[view], container = document.getElementById(config.container);
+            const status = document.getElementById('status-' + config.suffix);
+            const pager = document.getElementById('pagination-' + config.suffix);
+            window.currentPage[view] = state.page;
+            container.setAttribute('aria-busy', state.loading ? 'true' : 'false');
+            status.replaceChildren();
+            status.classList.toggle('hidden', !state.error && !state.loading);
+            if (state.error) {
+                const message = document.createElement('span');
+                message.textContent = '⚠️ ' + state.error + (state.data ? ' اطلاعات آخرین صفحهٔ دریافت‌شده نمایش داده می‌شود.' : '');
+                status.appendChild(message);
+                const retry = document.createElement('button');
+                retry.type = 'button'; retry.className = 'btn-modern btn-modern-outline';
+                retry.style.cssText = 'width:auto; margin:8px; padding:6px 12px'; retry.textContent = 'تلاش دوباره';
+                retry.addEventListener('click', () => guestPager.retry(view)); status.appendChild(retry);
+            } else if (state.loading) status.textContent = state.data ? 'در حال به‌روزرسانی همین صفحه…' : 'در حال دریافت نتایج…';
 
-        window.renderGuestAgencies = function() { 
-            const container = document.getElementById('guest-agencies-container'); if(!container) return; 
-            const s = window.normalizeText(document.getElementById('search-guest-agencies').value.trim()); 
-            const filtered = allAgencies.filter(a => [a.city, a.name].some(v => window.normalizeText(v).includes(s))); 
-            if(filtered.length === 0) return container.innerHTML = `<div class="empty-state pop-in"><span>🏢</span><p style="font-weight:bold; font-size:18px;">آژانسی یافت نشد.</p></div>`; 
-            let htmlStr = ''; 
-            filtered.forEach(ag => { 
-                const count = allGuestProperties.filter(p => p.agencyId === ag.id).length; 
-                const phones = [ag.phone, ag.phone2].filter(Boolean).join(' - '); 
-                htmlStr += `<div class="property-card fade-in" style="padding: 30px;"><h3 style="margin:0 0 20px 0; font-size: 22px; font-weight:900;">🏢 ${ag.name}</h3><div style="font-size:15px; color:var(--text-muted); margin-bottom:24px; display:flex; flex-direction:column; gap:12px;"><span style="display:flex; align-items:center; gap:8px; background:var(--bg-input); padding:12px; border-radius:12px; font-weight:bold;">📍 شهر: <b style="color:var(--text-main);">${ag.city || 'ثبت نشده'}</b></span><span style="display:flex; align-items:center; gap:8px; background:var(--bg-input); padding:12px; border-radius:12px; font-weight:bold;">📞 تلفن: <b dir="ltr" style="color:var(--text-main);">${phones || 'ندارد'}</b></span></div><div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border); padding-top: 20px;"><span style="background:var(--bg-price); color:var(--primary); padding:10px 16px; border-radius:12px; font-weight:900; font-size:14px;">${count} فایل موجود</span><button onclick="viewAgencyProperties('${ag.id}', '${ag.name}', '${ag.phone || ''}')" class="btn-modern" style="width:auto; margin:0; padding:12px 24px; font-size:15px;">مشاهده فایل‌ها 👈</button></div></div>`; 
-            }); 
-            container.innerHTML = htmlStr; 
+            const records = Object.values(state.data?.[view === 'guestAgencies' ? 'agencies' : 'properties'] || {});
+            const publicAgencies = allAgencies.map(({ selector, ...agency }) => agency);
+            const renderKey = JSON.stringify([records.map(({ selector, ...record }) => record), publicAgencies, window.currentViewMode, !!state.data, state.page]);
+            if (guestRenderKeys[view] !== renderKey) {
+                guestRenderKeys[view] = renderKey;
+                if (!state.data) container.replaceChildren();
+                else if (!records.length) {
+                    const message = view === 'guestAgencies' ? 'آژانسی یافت نشد.' : (state.page > 1 ? 'در این صفحه فایلی موجود نیست؛ به صفحهٔ قبل برگردید.' : 'ملکی یافت نشد.');
+                    container.innerHTML = `<div class="empty-state pop-in"><span>${view === 'guestAgencies' ? '🏢' : '🏚️'}</span><p style="font-weight:bold;font-size:18px;">${message}</p></div>`;
+                } else if (view === 'guestAgencies') {
+                    container.innerHTML = records.map(ag => {
+                        const phones = [ag.phone, ag.phone2].filter(Boolean).join(' - ');
+                        return `<div class="property-card fade-in" style="padding: 30px;"><h3 style="margin:0 0 20px 0; font-size: 22px; font-weight:900;">🏢 ${guestEscape(ag.name)}</h3><div style="font-size:15px; color:var(--text-muted); margin-bottom:24px; display:flex; flex-direction:column; gap:12px;"><span style="display:flex; align-items:center; gap:8px; background:var(--bg-input); padding:12px; border-radius:12px; font-weight:bold;">📍 شهر: <b style="color:var(--text-main);">${guestEscape(ag.city || 'ثبت نشده')}</b></span><span style="display:flex; align-items:center; gap:8px; background:var(--bg-input); padding:12px; border-radius:12px; font-weight:bold;">📞 تلفن: <b dir="ltr" style="color:var(--text-main);">${guestEscape(phones || 'ندارد')}</b></span></div><div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border); padding-top: 20px;"><span style="background:var(--bg-price); color:var(--primary); padding:10px 16px; border-radius:12px; font-weight:900; font-size:14px;">${Number(ag.publicCount) || 0} فایل موجود</span><button type="button" data-guest-open="${guestEscape(ag.id)}" class="btn-modern" style="width:auto; margin:0; padding:12px 24px; font-size:15px;">مشاهده فایل‌ها 👈</button></div></div>`;
+                    }).join('');
+                } else container.innerHTML = records.map(prop => generateCardHtml(prop, 'guest')).join('');
+            }
+            pager.classList.toggle('hidden', !state.data || (!state.canPrev && !state.canNext));
+            document.getElementById('page-info-' + config.suffix).textContent = `صفحه ${state.page}`;
+            document.getElementById('btn-prev-' + config.suffix).disabled = state.loading || !state.canPrev;
+            document.getElementById('btn-next-' + config.suffix).disabled = state.loading || !state.canNext;
+            document.getElementById('btn-first-' + config.suffix).disabled = state.loading || !state.canPrev;
+        }
+        const guestPager = window.GuestPager ? new window.GuestPager({
+            enabled: () => !!userProfile && userProfile.role === 'مهمان',
+            isActive: view => guestActiveView() === view,
+            filters: guestFiltersForView,
+            render: guestRenderPage,
+            fetchPage: async (view, params, hash, signal) => {
+                // Relative, same-origin URL; no auth token or raw agency login code.
+                const query = new URLSearchParams({ action: guestViews[view].action, ...params });
+                const response = await fetch(`${API_URL}?${query}`, { method: 'GET', cache: 'no-store', signal, headers: { 'X-Data-Hash': hash } });
+                let data;
+                try { data = await response.json(); }
+                catch (_) { throw new Error('پاسخ سرور قابل خواندن نیست؛ اتصال و نصب فایل‌ها را بررسی کنید.'); }
+                if (!response.ok || data.error) throw new Error(data.error || 'ارتباط با سرور برقرار نشد.');
+                return data.response;
+            }
+        }) : null;
+        function showGuestPage(view, options) {
+            if (guestActiveView() !== view) return;
+            if (view === 'guestAgency' && !selectedGuestAgency) {
+                document.getElementById(guestViews[view].container).textContent = 'آژانس انتخاب نشده است.';
+                return;
+            }
+            if (!guestPager) {
+                document.getElementById(guestViews[view].container).textContent = 'فایل assets/guest-browser.js بارگذاری نشد؛ صفحه را دوباره بارگذاری کنید.';
+                return;
+            }
+            return guestPager.show(view, options);
+        }
+        function refreshGuestActiveView() {
+            const view = guestActiveView();
+            if (!view) { if (guestPager) guestPager.suspend(); return; }
+            return showGuestPage(view, { refresh: true });
+        }
+        window.renderGuestAllProperties = () => showGuestPage('guestAll');
+        window.renderGuestAgencies = () => showGuestPage('guestAgencies');
+        window.renderGuestProperties = () => showGuestPage('guestAgency');
+        window.guestMovePage = (view, direction) => { if (guestPager) return guestPager.move(view, direction); };
+        window.guestFirstPage = view => { if (guestPager) return guestPager.first(view); };
+        window.viewAgencyProperties = function(id) {
+            const agency = allAgencies.find(ag => ag.id === id && ag.selector);
+            if (!agency) return;
+            selectedGuestAgency = agency;
+            selectedAgencyIdForGuest = id;
+            // Selecting a directory card starts at page one, as before fix27.
+            if (guestPager) guestPager.reset('guestAgency');
+            document.getElementById('guest-selected-agency-name').textContent = `فایل‌های ${guestPlainText(agency.name)} ` + (agency.phone ? `(📞 تماس: ${guestPlainText(agency.phone)})` : '');
+            window.switchTab('guest-properties');
         };
-
-        window.viewAgencyProperties = function(id, name, phone) { 
-            selectedAgencyIdForGuest = id; window.currentPage.guestAgency = 1; document.getElementById('guest-selected-agency-name').innerText = `فایل‌های ${name} ` + (phone ? `(📞 تماس: ${phone})` : ''); 
-            window.switchTab('guest-properties'); 
-        };
-
-        window.renderGuestProperties = function() { 
-            const container = document.getElementById('guest-properties-container'); if(!container) return; 
-            const pagEl = document.getElementById('pagination-guest-agency');
-            if(!selectedAgencyIdForGuest) { container.innerHTML = `<div class="empty-state pop-in"><span>👈</span><p style="font-weight:bold; font-size:18px;">آژانس انتخاب نشده.</p></div>`; pagEl.classList.add('hidden'); return; } 
-            
-            const props = allGuestProperties.filter(p => p.agencyId === selectedAgencyIdForGuest).sort((a, b) => (b.isVIP ? 1 : -1) || new Date(b.date).getTime() - new Date(a.date).getTime()); 
-            if(props.length === 0) { container.innerHTML = `<div class="empty-state pop-in"><span>🏚️</span><p style="font-weight:bold; font-size:18px;">فایلی موجود نیست.</p></div>`; pagEl.classList.add('hidden'); return; } 
-            
-            const totalPages = Math.ceil(props.length / ITEMS_PER_PAGE) || 1;
-            if (window.currentPage.guestAgency > totalPages) window.currentPage.guestAgency = totalPages;
-            const start = (window.currentPage.guestAgency - 1) * ITEMS_PER_PAGE;
-
-            let htmlStr = ''; 
-            props.slice(start, start + ITEMS_PER_PAGE).forEach(prop => { htmlStr += generateCardHtml(prop, 'guest'); }); 
-            container.innerHTML = htmlStr; 
-
-            if (totalPages > 1) {
-                pagEl.classList.remove('hidden'); document.getElementById('page-info-guest-agency').innerText = `صفحه ${window.currentPage.guestAgency} از ${totalPages}`;
-                document.getElementById('btn-prev-guest-agency').disabled = window.currentPage.guestAgency === 1; document.getElementById('btn-next-guest-agency').disabled = window.currentPage.guestAgency === totalPages;
-            } else { pagEl.classList.add('hidden'); }
-        };
+        document.getElementById('guest-agencies-container').addEventListener('click', event => {
+            const button = event.target.closest('[data-guest-open]');
+            if (button) window.viewAgencyProperties(button.dataset.guestOpen);
+        });
 // ⚡ تابع حذف دائمی یادآور پیگیری
         window.clearFollowUp = async function(id) {
             const demand = demands.find(d => d.id === id);
@@ -4176,6 +4225,7 @@ window.processAudioOnServer = async function(audioBlob) {
             }
         };
         
+        boot(); // All handlers are now initialized, including a restored guest session.
 </script>
   <button id="jarvis-btn" onclick="toggleJarvis()" style="display: none;" class="jarvis-fab" title="دستیار هوشمند (ویژه VIP)">
     <div class="jarvis-core"></div>

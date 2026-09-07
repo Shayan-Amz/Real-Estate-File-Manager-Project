@@ -1,7 +1,8 @@
-const CACHE_NAME = 'amlak-safe-cache-v2';
+const CACHE_NAME = 'amlak-safe-cache-fix27';
 const urlsToCache = [
     './',
-    './index.html'
+    './index.html',
+    './assets/guest-browser.js?v=fix27'
     // اگر فایل استایل یا عکسی دارید که همیشه ثابت است، نام آن را اینجا اضافه کنید
 ];
 
@@ -10,7 +11,8 @@ self.addEventListener('install', event => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(urlsToCache);
+            // fix27: fetch the matching shell/guest script, not a stale HTTP-cache copy.
+            return cache.addAll(urlsToCache.map(url => new Request(url, { cache: 'reload' })));
         })
     );
 });
@@ -43,7 +45,8 @@ self.addEventListener('fetch', event => {
     }
 
     event.respondWith(
-        fetch(event.request).catch(() => {
+        // Revalidate navigations on reload; do not force-reload an open/unsaved form.
+        fetch(event.request, event.request.mode === 'navigate' ? { cache: 'no-cache' } : undefined).catch(() => {
             return caches.match(event.request).then(response => {
                 return response || caches.match('./index.html');
             });
