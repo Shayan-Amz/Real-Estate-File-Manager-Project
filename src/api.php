@@ -421,17 +421,16 @@ if ($method === 'GET' || $action === 'getData') {
 
         $out = ['agencies' => (object)[], 'properties' => (object)[], 'demands' => (object)[], 'members' => (object)[]];
         
+        // fix26: مدیر/مشاور فقط اطلاعات آژانس خودشان را مصرف می‌کنند؛
+        // فهرست سراسری آژانس‌ها همچنان فقط برای نمای مهمان ارسال می‌شود.
         if ($isFullyAuthenticated && $userRole === 'مدیر') {
             $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, managerName, expireAt, createdAt, plan_type FROM agencies WHERE id = ?");
             $stmt->execute([$agencyId]);
             if($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
-            $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, plan_type FROM agencies WHERE id != ?");
-            $stmt->execute([$agencyId]);
-            while($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
-            
         } elseif ($isFullyAuthenticated && $userRole === 'مشاور') {
-            $stmt = $pdo->query("SELECT id, name, city, phone, phone2, plan_type FROM agencies");
-            while($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
+            $stmt = $pdo->prepare("SELECT id, name, city, phone, phone2, plan_type FROM agencies WHERE id = ?");
+            $stmt->execute([$agencyId]);
+            if($row = $stmt->fetch()) { $out['agencies']->{$row['id']} = $row; }
         } else {
             $stmt = $pdo->query("SELECT id, name, city, phone, phone2, plan_type FROM agencies");
             while($row = $stmt->fetch()) { 
@@ -442,7 +441,9 @@ if ($method === 'GET' || $action === 'getData') {
         }
         
         if ($isFullyAuthenticated && $agencyId) {
-            $stmt = $pdo->prepare("SELECT * FROM properties WHERE agencyId = ? OR (status = 'موجود' AND showToGuest = 1)"); 
+            // fix26: فرانت فایل‌های دیگر آژانس‌ها را در این نقش‌ها دور می‌ریزد؛
+            // همهٔ فایل‌های خود آژانس (حتی مخفی/واگذارشده) بدون محدودیت باقی می‌مانند.
+            $stmt = $pdo->prepare("SELECT * FROM properties WHERE agencyId = ?");
             $stmt->execute([$agencyId]);
         } else {
             $stmt = $pdo->query("SELECT * FROM properties WHERE status = 'موجود' AND showToGuest = 1");
