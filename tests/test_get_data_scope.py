@@ -30,15 +30,17 @@ def get_sections(source):
     manager, rest = agencies.split(
         "} elseif ($isFullyAuthenticated && $userRole === 'مشاور') {", 1
     )
-    # fix27 moved guests to separate bounded endpoints; this suite now protects
-    # the unchanged authenticated queries. Public behavior is tested in PHP.
-    consultant, rest = rest.split(PRIVATE_GATE, 1)
-    own_properties, rest = rest.split("while($row = $stmt->fetch()) {", 1)
+    consultant, rest = rest.split("} else {", 1)
+    guest_agencies, rest = rest.split(PRIVATE_GATE, 1)
+    own_properties, rest = rest.split("} else {", 1)
+    guest_properties, rest = rest.split("while($row = $stmt->fetch()) {", 1)
     private_lists = rest.split(PRIVATE_GATE, 1)[1].split("$out['dataHash']", 1)[0]
     return {
         "manager": manager,
         "consultant": consultant,
+        "guest_agencies": guest_agencies,
         "own_properties": own_properties,
+        "guest_properties": guest_properties,
         "private_lists": private_lists,
     }
 
@@ -147,6 +149,14 @@ class GetDataScopeTests(unittest.TestCase):
         self.assertEqual(self.rows("manager", "missing"), [])
         self.assertEqual(self.rows("consultant", "missing"), [])
 
+    def test_guest_queries_keep_all_agencies_and_only_available_public_properties(self):
+        rows = self.rows("guest_agencies")
+        self.assertEqual({row["id"] for row in rows}, {"100001", "100002", "100003"})
+        self.assertTrue(all(set(row) == {"id", "name", "city", "phone", "phone2", "plan_type"} for row in rows))
+        # These are raw DB rows. Guest masking/privacy serialization is unchanged PHP.
+        rows = self.rows("guest_properties")
+        self.assertEqual({row["id"] for row in rows}, {"100001_public", "100002_public"})
+
     def test_agency_identifiers_are_bound_as_values(self):
         for section in ("manager", "consultant", "own_properties"):
             self.assertEqual(self.rows(section, "100001' OR 1=1 --"), [])
@@ -190,6 +200,8 @@ class GetDataScopeTests(unittest.TestCase):
             )
         for section, expected in before.items():
             self.assertEqual(self.rows(section, "100001"), expected)
+        self.assertEqual(len(self.rows("guest_agencies")), 1003)
+        self.assertEqual(len(self.rows("guest_properties")), 1002)
 
 
 if __name__ == "__main__":

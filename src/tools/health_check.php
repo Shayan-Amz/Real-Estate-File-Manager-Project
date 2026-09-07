@@ -76,15 +76,9 @@ head('۱) محیط PHP');
 if (version_compare(PHP_VERSION, '7.4.0', '>=')) ok('php', 'نسخهٔ PHP ' . PHP_VERSION);
 else bad('php', 'نسخهٔ PHP خیلی قدیمی است: ' . PHP_VERSION, 'حداقل 7.4 لازم است');
 
-foreach (['pdo_mysql' => 'اتصال به دیتابیس', 'curl' => 'صدا زدن API صوت', 'gd' => 'تغییر اندازهٔ عکس‌ها', 'json' => 'پاسخ‌های JSON', 'mbstring' => 'چاپ عنوان‌های فارسی این گزارش', 'openssl' => 'شناسه و صفحه‌بندی امن مهمان'] as $ext => $why) {
+foreach (['pdo_mysql' => 'اتصال به دیتابیس', 'curl' => 'صدا زدن API صوت', 'gd' => 'تغییر اندازهٔ عکس‌ها', 'json' => 'پاسخ‌های JSON', 'mbstring' => 'چاپ عنوان‌های فارسی این گزارش'] as $ext => $why) {
     if (extension_loaded($ext)) ok('php', "افزونهٔ $ext ($why)");
     else bad('php', "افزونهٔ $ext نصب نیست", $why);
-}
-
-if (function_exists('openssl_get_cipher_methods')) {
-    in_array('aes-256-gcm', openssl_get_cipher_methods(), true)
-        ? ok('php', 'رمزنگاری AES-GCM برای صفحه‌بندی مهمان آماده است')
-        : bad('php', 'AES-GCM برای صفحه‌بندی مهمان در دسترس نیست');
 }
 
 $need = ['upload_max_filesize' => 8, 'post_max_size' => 8];
@@ -344,9 +338,7 @@ if ($pdo->query("SHOW TABLES LIKE 'personal_notes'")->rowCount() > 0) {
 $__needIdx = [
     'members'    => ['idx_agency_name'  => 'agencyId,name'],
     'properties' => ['idx_agencyId'     => 'agencyId',
-                     'idx_status_guest' => 'status,showToGuest',
-                     'idx_guest_page' => 'status,showToGuest,isVIP,date,id',
-                     'idx_agency_guest_page' => 'agencyId,status,showToGuest,isVIP,date,id'],
+                     'idx_status_guest' => 'status,showToGuest'],
     'demands'    => ['idx_agencyId'     => 'agencyId'],
 ];
 foreach ($__needIdx as $__t => $__keys) {

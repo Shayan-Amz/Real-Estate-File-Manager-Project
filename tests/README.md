@@ -1,80 +1,55 @@
-# Regression tests (fix26 / fix27)
+# Active recovery regression checks
 
-Run from the repository root. No test contacts the host, reads `src/config.php`,
-uses real credentials, or changes a production database. Do not upload `tests/`
-to `public_html`.
+The unsuccessful fix27 guest-pagination feature has been retired from the active
+application. Its source and tests remain available in Git history (`4a2c01c`),
+and its old ZIP is historical, not a deployment recommendation. Runtime business
+logic is restored to the accepted fix26 baseline (`a24348e`).
 
-## Authenticated data scope — 8 tests
+## SQL scope — 9 tests
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-Extracts the real authenticated `getData` SELECTs and executes them on in-memory
-SQLite fixtures. The earlier guest assertions moved to the PHP suite when fix27
-retired the unbounded guest `getData` response.
+These execute the actual getData SELECTs against synthetic in-memory SQLite
+fixtures. They do not access the live database or execute a MySQL migration.
 
-## Public API — 18 tests
-
-```sh
-php tests/guest_api_test.php
-```
-
-Requires PHP with PDO SQLite and OpenSSL (AES-256-GCM). Executes the production
-`guest_api.php` functions, including the actual prepared SQL, typed numeric
-bindings, public serialization, encrypted selectors/cursors, and page hashes.
-Also checks the public-action allowlist and legacy-client gate in `api.php`.
-
-Covers tied/null sort keys, full cursor traversal, empty/deleted pages, literal
-LIKE characters, Persian/Arabic normalization, all numeric/type filters, hidden
-prices/images, agency counts, metadata, tampering, wrong-query cursors, and the
-`unmodified` short circuit. Fixtures are synthetic and the database is in memory.
-
-When native PHP is unavailable, the same suite can run via WebAssembly:
+## Actual browser startup — 10 checks
 
 ```sh
-npm install --prefix /tmp/amlak-test-tools --no-audit --no-fund @php-wasm/cli@3.1.53
-/tmp/amlak-test-tools/node_modules/.bin/php-wasm-cli tests/guest_api_test.php
+npm install --prefix /tmp/recovery29-tools --no-audit --no-fund \
+  puppeteer-core@24.17.1 @sparticuz/chromium@138.0.2
+NODE_PATH=/tmp/recovery29-tools/node_modules node tests/recovery29.browser.cjs
 ```
 
-Verify the summary says `18 PHP/SQLite tests; 0 failures.` The WASM CLI version
-used here does not reliably propagate PHP's exit status to the shell. Native PHP
-does return a nonzero status for a failure. Validation for this change used PHP
-8.5.10/WASM; production files also parse with PHP 7.4 grammar.
+Uses headless Chromium with every HTTP request intercepted. It reproduces the
+old parser-blocking Neshan dependency, then verifies recovery startup with all
+optional resources deliberately stalled. Also covers restored guest sessions,
+bad/blocked browser storage, manager data, fresh login, healthy optional local
+assets, API 500, and a bounded timeout for a stalled server request. No production
+host, real account, map service, model, or database is contacted.
 
-Optional: `php tests/guest_api_test.php --dump-sql` emits the actual generated
-SELECT shapes. The 10 distinct shapes and two additive index statements were
-also parsed in MySQL mode with `node-sql-parser@5.3.13`. This is a dialect check,
-not a real MySQL execution plan or migration test.
+On minimal Linux sandboxes the script extracts the NSS/NSPR libraries already
+included in the pinned Chromium package. Screenshots go outside the repo, under
+`~/.cache/amlak-recovery29`.
 
-## Request state machine — 14 tests
+## Recovery service worker — 5 tests
 
 ```sh
-node --test tests/guest_pager.test.cjs
+node --test tests/recovery29.worker.test.cjs
 ```
 
-Uses Node's built-in test runner, with no external dependencies. Tests debounce,
-request cancellation, stale responses, page/hash isolation, retry, backoff,
-timeout, independent views, and bounded page data retention.
+Verifies that only old app-shell caches are removed, the main/new API paths are
+excluded, unrelated caches and normal image HTTP caching remain intact, and failed
+script requests are never replaced by cached HTML.
 
-## Actual HTML/UI integration and service worker — 10 tests
+## Safety and deployment boundary
 
-```sh
-npm install --prefix /tmp/amlak-test-tools --no-audit --no-fund jsdom@26.1.0
-NODE_PATH=/tmp/amlak-test-tools/node_modules node --test tests/guest_ui.test.cjs
-```
+The restored `api.php` and `stt.php` match the approved baseline. Temporary fresh
+PHP entry files bypass reliance on old compiled paths; their differences are only
+a version header, a guard, and the path to the copied speech helper. No config,
+SQL dump, user upload, or database rollback is included in the ZIP.
 
-Runs the real inline application script and guest controller against a fixture
-HTTP API inside jsdom. Covers fresh/restored guest sessions, filters, navigation,
-directory counts/selectors, gallery/details/phone links, escaped directory names,
-private-cache isolation, unchanged manager startup/cards, and versioned shell
-caching/API cache exclusion. It does not load external assets or make network
-requests. This is DOM integration testing, not a real-browser visual test.
-
-## Deployment checks still required
-
-All 50 local tests passed. No production load test, real MySQL/MariaDB migration,
-or host PHP-FPM/Apache execution has been performed. After deployment, test both
-authenticated roles and all three guest views; check health-check sections 1
-(OpenSSL/AES-GCM) and 5 (the two new public-pagination indexes). See the Persian
-README in `fix27-guest-pagination.zip` for installation and rollback instructions.
+Local regression success does not prove the host is recovered. The user must
+open `recover29.html?api.php=29` after installation and confirm the visible build
+marker and login/data behavior. Academic work stays paused until that confirmation.

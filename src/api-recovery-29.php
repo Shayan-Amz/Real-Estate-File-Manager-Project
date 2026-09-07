@@ -1,4 +1,7 @@
 <?php
+// Recovery 29: approved fix26 API under a fresh opcode-cache path.
+header('X-Amlak-Recovery: fix29-baseline26');
+define('AMLAK_RECOVERY_29', true);
 ob_start("ob_gzhandler");
 // فایل API فوق‌پیشرفته بر پایه معماری Enterprise SQL - Secure Mode
 error_reporting(E_ALL);
@@ -13,7 +16,7 @@ set_exception_handler(function($e) {
 });
 
 require_once 'config.php';
-require_once __DIR__ . '/stt.php';   // 🎙️ موتور تبدیل گفتار به متن (جارویس)
+require_once __DIR__ . '/stt-recovery-29.php';   // 🎙️ موتور تبدیل گفتار به متن (جارویس)
 
 header('Content-Type: application/json; charset=utf-8');
 // 🛡️ CORS: قبلاً '*' بود، یعنی هر سایتی می‌توانست به این API درخواست بدهد.
