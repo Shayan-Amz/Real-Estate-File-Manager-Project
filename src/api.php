@@ -508,8 +508,42 @@ if ($method === 'GET' || $action === 'getData') {
 // ==========================================
 // POST METHODS
 // ==========================================
+// 🛡️ سقف‌های آپلود. قبلاً هیچ‌کدام وجود نداشت:
+//    file_get_contents('php://input') بدون محدودیت خوانده می‌شد، هر عکس
+//    base64 بدون سقف decode می‌شد، و imagecreatefromstring روی ابعادِ
+//    اعلام‌شده حافظه می‌گرفت (بمب فشرده‌سازی).
+//    سقف‌ها سخاوتمندانه‌اند: فرانت عکس را به ۸۰۰px با کیفیت ۰٫۷ کوچک
+//    می‌کند (index.html:2171) و حداکثر ۳ عکس می‌پذیرد (index.html:2191)،
+//    پس یک آپلود واقعی حدود ۶۰۰ کیلوبایت است — اینجا ۸ مگابایت مجاز است.
+if (!defined('MAX_REQUEST_BYTES'))     define('MAX_REQUEST_BYTES', 8 * 1024 * 1024);
+if (!defined('MAX_IMAGES_PER_PROPERTY')) define('MAX_IMAGES_PER_PROPERTY', 10);
+if (!defined('MAX_IMAGE_B64_CHARS'))   define('MAX_IMAGE_B64_CHARS', 4000000);
+if (!defined('MAX_IMAGE_PIXELS'))      define('MAX_IMAGE_PIXELS', 20000000);
+
 if ($method === 'POST') {
-            $rawInput = json_decode(file_get_contents('php://input'), true);
+            // ⚠️ multipart استثناست: CONTENT_LENGTH آن شامل فایل صوتی است و
+            //    ویس از $_FILES می‌آید نه از این بدنه. stt.php سقف خودش را
+            //    دارد (STT_MAX_BYTES = 8MB)، پس ویس با این تغییر نمی‌شکند.
+            $__isMultipart = (stripos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') !== false);
+            if (!$__isMultipart) {
+                // چک «قبل» از خواندن، تا کپی اضافه در حافظه نسازیم
+                $__cl = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+                if ($__cl > MAX_REQUEST_BYTES) {
+                    http_response_code(413);
+                    echo json_encode(['error' => 'حجم درخواست بیش از حد مجاز است.'], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+            }
+            $__body = file_get_contents('php://input');
+            // دفاع دوم: CONTENT_LENGTH ممکن است در انتقال chunked نباشد
+            if (!$__isMultipart && $__body !== false && strlen($__body) > MAX_REQUEST_BYTES) {
+                unset($__body);
+                http_response_code(413);
+                echo json_encode(['error' => 'حجم درخواست بیش از حد مجاز است.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            $rawInput = json_decode($__body, true);
+            unset($__body);   // ⚡ زود آزادش کن؛ ممکن است چند مگابایت باشد
             if (!is_array($rawInput)) $rawInput = [];
             
             // ⚡ ادغام دیتای JSON متنی با دیتای فایل‌های صوتی (حیاتی برای عبور از فایروال)
@@ -963,13 +997,34 @@ if ($method === 'POST') {
             if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
 
             if (!empty($input['images']) && is_array($input['images'])) {
+                // 🛡️ فرانت حداکثر ۳ عکس می‌دهد؛ ۱۰ حاشیهٔ امن است برای
+                //    کلاینت‌های دیگر، ولی جلوی آرایهٔ بی‌نهایت را می‌گیرد.
+                if (count($input['images']) > MAX_IMAGES_PER_PROPERTY) {
+                    echo json_encode(['error' => 'حداکثر ' . MAX_IMAGES_PER_PROPERTY . ' عکس برای هر ملک مجاز است.'], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
                 foreach ($input['images'] as $index => $base64OrUrl) {
                     if (strpos($base64OrUrl, 'data:image') === 0) {
                         if (stripos($base64OrUrl, 'svg') !== false || stripos($base64OrUrl, 'xml') !== false) continue;
+                        // 🛡️ سقف حجم هر عکس، «قبل» از base64_decode.
+                        //    یک عکس واقعی ۸۰۰px حدود ۲۰۰ هزار کاراکتر است.
+                        if (strlen($base64OrUrl) > MAX_IMAGE_B64_CHARS) continue;
 
                         $parts = explode(',', $base64OrUrl);
                         if (count($parts) == 2) {
                             $imgData = base64_decode($parts[1]);
+                            // 🛡️ بمب فشرده‌سازی: یک JPEG چند کیلوبایتی می‌تواند
+                            //    ابعاد ۵۰۰۰۰×۵۰۰۰۰ اعلام کند و GD موقع
+                            //    imagecreatefromstring گیگابایت حافظه بخواهد.
+                            //    ابعاد را از هدر می‌خوانیم «قبل» از decode کامل.
+                            //    عکس واقعی ۸۰۰×۶۰۰ = ۰٫۴۸ مگاپیکسل؛ سقف ۲۰ است.
+                            $__info = @getimagesizefromstring($imgData);
+                            if ($__info === false
+                                || (int)$__info[0] <= 0 || (int)$__info[1] <= 0
+                                || ((int)$__info[0] * (int)$__info[1]) > MAX_IMAGE_PIXELS) {
+                                unset($imgData);
+                                continue;
+                            }
                             $fileName = 'prop_' . $agencyId . '_' . time() . '_' . $index . '_' . uniqid() . '.jpg';
                             $filePath = $uploadDir . $fileName;
 
