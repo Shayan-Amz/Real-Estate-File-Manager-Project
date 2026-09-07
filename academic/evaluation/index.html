@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; media-src 'self' blob:; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>آزمون پژوهشی املاک من</title>
+<link rel="stylesheet" href="style.css">
+<script src="metrics.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+<header><div class="wrap"><span class="eyebrow">پروژهٔ کارشناسی · آزمایش کنترل‌شده</span><h1>اندازه‌گیری، نه حدس</h1><p>سرعت تبدیل گفتار، دقت استخراج مشخصات و زمان تکمیل فرم را با دادهٔ ساختگی ثبت کنید.</p></div></header>
+<main class="wrap">
+<section class="notice"><strong>این صفحه از سایت اصلی جداست.</strong> هیچ ملک، مشتری یا تنظیمی در پایگاه‌داده ثبت، ویرایش یا حذف نمی‌شود. صدا فقط برای پردازش موقت ارسال می‌شود؛ فایل صوتی در خروجی گزارش یا پوشهٔ آپلود سایت ذخیره نمی‌شود. سرویس بیرونی ممکن است سیاست نگهداری دادهٔ خودش را داشته باشد.</section>
+<section id="login-panel" class="card">
+<h2>۱ · ورود مالک پروژه</h2>
+<p>رمز مدیریت کل را فقط در این فرمِ HTTPS وارد کنید؛ همان رمزی که برای مدیریت/ساخت کد آژانس استفاده می‌کنید. آن را در چت نفرستید.</p>
+<form id="login-form"><label for="master-password">رمز مدیریت کل</label><input id="master-password" type="password" autocomplete="current-password" maxlength="512" required>
+<label class="check"><input id="consent" type="checkbox" required> فقط متن‌های ساختگی این صفحه را استفاده می‌کنم؛ می‌دانم آزمون به سرویس صوت و مدل زبانی ارسال می‌شود و سهمیهٔ همان حساب‌ها را مصرف می‌کند.</label>
+<button id="login-button" type="submit">ورود به محیط آزمون</button></form>
+</section>
+<div id="message" role="status" aria-live="polite"></div>
+<section id="workspace" hidden>
+<div class="card"><h2>۲ · مشخصات اجرا</h2><div class="grid controls">
+<label>شناسهٔ ناشناس آزمونگر<input id="participant" value="P01" maxlength="12" dir="ltr"></label>
+<label>سناریو<select id="case-select"></select></label>
+<label>روش اجرا<select id="mode"><option value="text">متن مرجع ← مدل زبانی</option><option value="voice">صوت ← تبدیل گفتار ← مدل زبانی</option><option value="manual">ورود دستی، بدون تماس با سرویس</option></select></label>
+<label>شرایط صوت<select id="condition"><option value="quiet">محیط آرام</option><option value="ambient-noise">نویز محیطی ملایم</option></select></label>
+</div><div class="models"><div>مدل صوت: <b id="asr-model" dir="ltr"></b></div><div>مدل متن: <b id="llm-model" dir="ltr"></b></div></div>
+<p class="muted">برای شروع، هر پنج سناریو را یک بار متنی و یک بار صوتی در محیط آرام اجرا کنید. اگر فرصت دارید، ورود دستی و صوت با نویز ملایم را هم برای هر پنج سناریو انجام دهید. چند آزمونگر را با شناسه‌های متفاوت ثبت کنید؛ نتیجهٔ یک نفر به همهٔ کاربران قابل تعمیم نیست.</p>
+</div>
+<div class="card"><h2 id="case-title">متن آزمایشی</h2><blockquote id="reference"></blockquote>
+<p class="muted">قبل از شروع متن را بخوانید. در حالت صوتی همین متن را طبیعی و کامل بخوانید؛ شخص، مشتری یا شمارهٔ واقعی اضافه نکنید. در حالت دستی، فقط اطلاعاتی را وارد کنید که در متن آمده است.</p>
+<div class="actions"><button id="start" type="button">شروع آزمون</button><button id="stop" type="button" hidden>پایان ضبط و پردازش</button><button id="cancel" class="secondary" type="button" hidden>ثبت به‌عنوان لغوشده</button></div>
+<div class="audio-upload"><label>اگر میکروفون مرورگر کار نمی‌کند، فایل همین متن را انتخاب کنید:<input id="audio-file" type="file" accept="audio/*,.webm,.m4a,.wav,.mp3,.ogg"></label><button id="use-file" class="secondary" type="button">آزمون با فایل صوتی</button></div>
+<audio id="playback" controls hidden></audio><p id="stage" class="stage" aria-live="polite"></p>
+</div>
+<div id="review" class="card" hidden><h2>۳ · بازبینی و پایان کار</h2><p>خروجی خام قبل از ویرایش حفظ شده است. این فرم فقط برای اندازه‌گیری بازبینی است و چیزی در سامانهٔ املاک ذخیره نمی‌کند. مقدارهای اشتباه را اصلاح و مقدارهای ناگفته را خالی بگذارید.</p>
+<form id="review-form"><div id="review-fields" class="grid"></div><button id="finish" type="submit">ثبت نتیجهٔ آزمایش</button></form>
+</div>
+<div class="card"><h2>۴ · مشاهدات ثبت‌شده</h2><p id="progress"></p><div class="table-scroll"><table><thead><tr><th>سناریو</th><th>روش</th><th>وضعیت</th><th>زمان سرویس صوت</th><th>زمان سرویس متن</th><th>دقت فیلدهای گفته‌شده</th></tr></thead><tbody id="results-body"></tbody></table></div>
+<div class="actions"><button id="download" type="button" disabled>دانلود نتایج برای گزارش</button><button id="logout" class="secondary" type="button">خروج امن از ابزار</button></div>
+<details><summary>جزئیات آخرین اجرا</summary><pre id="raw-output" dir="ltr"></pre></details>
+<p class="muted">تمام اجراهای ناموفق و لغوشده نیز صادر می‌شوند. زمان سرویس شامل شبکه و صف ارائه‌دهنده است، نه زمان خالص پردازندهٔ مدل. نتایج روی همین مرورگر ذخیره می‌شوند؛ گذرواژه، توکن ورود و صدا ذخیره یا صادر نمی‌شوند.</p>
+</div>
+</section>
+<footer>نسخهٔ ابزار: thesis-eval-v1 · مبنای منطق هوش مصنوعی: a24348e · بدون اتصال به پایگاه‌داده</footer>
+</main>
+</body></html>

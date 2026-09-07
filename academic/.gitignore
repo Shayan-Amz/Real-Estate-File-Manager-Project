@@ -1,0 +1,11 @@
+# Never commit deployment credentials or collected audio.
+**/config.php
+**/private/state.php
+**/private/*.json
+**/private/*.log
+**/*.webm
+**/*.wav
+**/*.mp3
+**/*.m4a
+**/__pycache__/
+**/node_modules/

@@ -1,0 +1,35 @@
+{
+  "date_local": "2026-09-08",
+  "baseline": "a24348e",
+  "original_pdf_commit": "e040698",
+  "original_pdf_sha256": "8cfa1399b5651615cbf0399d5dea009aa71da7ff575510adfa642a292400d9da",
+  "local_tests": {
+    "jwt": 23,
+    "ai_fixtures": 6,
+    "scoring": 13,
+    "ui_fixtures": 7,
+    "http_php_wasm": 10,
+    "failed": 0
+  },
+  "jwt_interoperability": {
+    "php_to_jose": true,
+    "jose_to_php": true
+  },
+  "php_runtime": "PHP 8.5.10 via WebAssembly; PHP 7.4 grammar also checked",
+  "live_src_changed": false,
+  "original_pdf_changed": false,
+  "external_model_calls_performed_by_agent": 0,
+  "actual_model_accuracy_measured": false,
+  "host_audio_evaluation": "awaiting user execution",
+  "final_revised_pdf": "pending real observations and final composition",
+  "artifacts": {
+    "fix28-thesis-evaluation.zip": {
+      "sha256": "1053fbd4cdc88a95fe0d22132695e150d64a2998da3af52ef8fae7256b016100",
+      "bytes": 35776
+    },
+    "fix28-defense-source.zip": {
+      "sha256": "44cde26e1d5a2e3f7b9ee0cb0afa2da260fac94219158ff9dd319602cc87b4a7",
+      "bytes": 263717
+    }
+  }
+}
