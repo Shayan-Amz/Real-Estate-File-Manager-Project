@@ -38,29 +38,33 @@
 \babelprovide[import, mapdigits]{persian}
 \babelprovide[import]{english}
 
-%% FIX (fonts): انتخاب خودکار قلم در سه سطح پشتیبان تا در هیچ محیطی
-%% متن فارسی سفید نماند: (۱) قلم داخل پروژه، (۲) قلم نصب‌شده در سیستم،
-%% (۳) قلم همراه تک‌لایو. پیام انتخاب‌شده در لاگ (typeout) ثبت می‌شود.
+%% FIX (fonts): انتخاب خودکار قلم در چند سطح پشتیبان (وزیرمتن داخل پروژه،
+%% سپس قلم سیستم، سپس تک‌لایو) تا متن فارسی در هیچ محیطی سفید نماند.
 \tracinglostchars=2 % هشدار در لاگ اگر حرفی در قلم نباشد (بدون توقف کامپایل)
-\IfFileExists{fonts/NotoSansArabic-Regular.ttf}{%
+\IfFileExists{fonts/Vazirmatn-Regular.ttf}{%
   \typeout{[thesis] fonts: using project fonts from fonts/}%
   \babelfont{rm}{NotoSans}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
     UprightFont = *-Regular, BoldFont = *-Bold,
     ItalicFont = *-Regular, ItalicFeatures = {FakeSlant = 0.2},
     BoldItalicFont = *-Bold, BoldItalicFeatures = {FakeSlant = 0.2}]%
-  \babelfont[persian]{rm}{NotoSansArabic}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
+  \babelfont[persian]{rm}{Vazirmatn}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
     UprightFont = *-Regular, BoldFont = *-Bold,
     ItalicFont = *-Regular, BoldItalicFont = *-Bold]%
 }{%
-\IfFileExists{thesis/fonts/NotoSansArabic-Regular.ttf}{%
+\IfFileExists{thesis/fonts/Vazirmatn-Regular.ttf}{%
   \typeout{[thesis] fonts: using project fonts from thesis/fonts/}%
   \babelfont{rm}{NotoSans}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
     UprightFont = *-Regular, BoldFont = *-Bold,
     ItalicFont = *-Regular, ItalicFeatures = {FakeSlant = 0.2},
     BoldItalicFont = *-Bold, BoldItalicFeatures = {FakeSlant = 0.2}]%
-  \babelfont[persian]{rm}{NotoSansArabic}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
+  \babelfont[persian]{rm}{Vazirmatn}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
     UprightFont = *-Regular, BoldFont = *-Bold,
     ItalicFont = *-Regular, BoldItalicFont = *-Bold]%
+}{%
+\IfFontExistsTF{Vazirmatn}{%
+  \typeout{[thesis] fonts: using system Vazirmatn}%
+  \IfFontExistsTF{Noto Sans}{\babelfont{rm}{Noto Sans}}{\babelfont{rm}{Latin Modern Roman}}%
+  \babelfont[persian]{rm}{Vazirmatn}%
 }{%
 \IfFontExistsTF{Noto Sans Arabic}{%
   \typeout{[thesis] fonts: using system Noto fonts}%
@@ -71,7 +75,7 @@
   \babelfont{rm}{Latin Modern Roman}%
   \babelfont[persian]{rm}{Amiri-Regular.ttf}[Ligatures = TeX,
     BoldFont = Amiri-Bold.ttf, ItalicFont = Amiri-Regular.ttf]%
-}}}
+}}}}
 
 \usepackage{enumitem}
 \setlist[itemize]{label=\textbullet}
@@ -151,6 +155,24 @@
 \titlespacing*{\chapter}{0pt}{3.5cm}{2cm}
 
 \setstretch{1.5}
+
+%% FIX (compile): بازگردانی جدول استاندارد لاتک؛ بازنویسی bidi از جدول در
+%% تک‌لایو ۲۰۲۶ با نسخه جدید آرایه ناسازگار است (خطا در هر tabular).
+%% ستون‌ها چپ‌به‌راست می‌شوند ولی محتوای فارسی سلول‌ها کاملاً درست است.
+\makeatletter
+\let\amlak@tabular\tabular
+\let\amlak@iitabular\@tabular
+\let\amlak@endtabular\endtabular
+\let\amlak@array\@array
+\let\amlak@endarray\endarray
+\AtBeginDocument{%
+  \let\tabular\amlak@tabular
+  \let\@tabular\amlak@iitabular
+  \let\endtabular\amlak@endtabular
+  \let\@array\amlak@array
+  \let\endarray\amlak@endarray
+}
+\makeatother
 
 \begin{document}
 
@@ -910,7 +932,8 @@ async function api(action, body) {
 \caption{نتایج ارزیابی کارایی تبدیل گفتار و استخراج داده}
 \label{tab:perf_ai}
 \renewcommand{\arraystretch}{1.5}
-\begin{tabular}{|l|c|c|c|}
+%% FIX: راست‌چین برای خوانایی فارسی جدول.
+\begin{tabular}{|r|c|c|c|}
 \hline
 \textbf{طول فایل صوتی} & \textbf{زمان مدل ویسپر} & \textbf{زمان استخراج فیلدها} & \textbf{دقت کلی استخراج} \\ \hline
 کوتاه (زیر ۱۰ ثانیه) & ۱.۱ ثانیه & ۱.۶ ثانیه & ۹۸٪ \\ \hline
@@ -1010,7 +1033,8 @@ async function api(action, body) {
 \caption{نتایج آزمون‌های نفوذپذیری و تست‌های امنیتی سامانه}
 \label{tab:sec_eval}
 \renewcommand{\arraystretch}{1.5}
-\begin{tabular}{|l|l|c|}
+%% FIX: راست‌چین برای خوانایی فارسی جدول.
+\begin{tabular}{|r|r|c|}
 \hline
 \textbf{نوع آزمون امنیتی} & \textbf{مکانیزم دفاعی پیاده‌سازی‌شده} & \textbf{وضعیت نتیجه آزمون} \\ \hline
 تزریق به پایگاه داده & گزاره‌های آماده در رابط اشیاء داده & مسدودسازی کامل در نمونه‌ها \\ \hline
