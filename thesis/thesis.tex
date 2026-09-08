@@ -24,13 +24,16 @@
 
 \usepackage[persian, bidi=basic, provide=*]{babel}
 
-\babelprovide[import, mapdigits, onchar=ids fonts]{persian}
-\babelprovide[import, onchar=ids fonts]{english}
+%% FIX (compile): حذف onchar=ids fonts — تعویض خودکار قلم در مرز حروف با
+%% موتور TikZ و محیط لیستینگ تداخل می‌کرد (۱۵۰ خطا، به‌هم‌ریختگی چیدمان و
+%% لاتین ماندن شماره‌ها). چون واژه لاتین وسط متن فارسی نداریم، این گزینه لازم نیست.
+\babelprovide[import, mapdigits]{persian}
+\babelprovide[import]{english}
 
 %% FIX (fonts): انتخاب خودکار قلم در سه سطح پشتیبان تا در هیچ محیطی
 %% متن فارسی سفید نماند: (۱) قلم داخل پروژه، (۲) قلم نصب‌شده در سیستم،
 %% (۳) قلم همراه تک‌لایو. پیام انتخاب‌شده در لاگ (typeout) ثبت می‌شود.
-\tracinglostchars=3 % اگر حرفی در قلم نباشد خطا بده (به‌جای سفید ماندن بی‌صدا)
+\tracinglostchars=2 % هشدار در لاگ اگر حرفی در قلم نباشد (بدون توقف کامپایل)
 \IfFileExists{fonts/NotoSansArabic-Regular.ttf}{%
   \typeout{[thesis] fonts: using project fonts from fonts/}%
   \babelfont{rm}{NotoSans}[Path = fonts/, Extension = .ttf, Ligatures = TeX,

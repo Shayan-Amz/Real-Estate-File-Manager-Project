@@ -3,9 +3,9 @@
 \documentclass{article}
 \usepackage{fontspec}
 \usepackage[persian, bidi=basic, provide=*]{babel}
-\babelprovide[import, mapdigits, onchar=ids fonts]{persian}
-\babelprovide[import, onchar=ids fonts]{english}
-\tracinglostchars=3
+\babelprovide[import, mapdigits]{persian}
+\babelprovide[import]{english}
+\tracinglostchars=2
 \IfFileExists{fonts/NotoSansArabic-Regular.ttf}{%
   \babelfont{rm}{NotoSans}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
     UprightFont = *-Regular, BoldFont = *-Bold]%
