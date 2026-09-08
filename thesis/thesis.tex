@@ -27,34 +27,40 @@
 \babelprovide[import, mapdigits, onchar=ids fonts]{persian}
 \babelprovide[import, onchar=ids fonts]{english}
 
-%% FIX (fonts): بارگذاری قلم از داخل پروژه (پوشه fonts) تا نمایش فارسی
-%% به فونت نصب‌شده روی سیستم وابسته نباشد. اگر قلم‌ها را در سیستم نصب
-%% کرده‌اید، می‌توانید به‌جای بلوک زیر از نسخه سیستمی استفاده کنید:
-%%   \babelfont{rm}{Noto Sans}
-%%   \babelfont[persian]{rm}{Noto Sans Arabic}
+%% FIX (fonts): انتخاب خودکار قلم در سه سطح پشتیبان تا در هیچ محیطی
+%% متن فارسی سفید نماند: (۱) قلم داخل پروژه، (۲) قلم نصب‌شده در سیستم،
+%% (۳) قلم همراه تک‌لایو. پیام انتخاب‌شده در لاگ (typeout) ثبت می‌شود.
 \tracinglostchars=3 % اگر حرفی در قلم نباشد خطا بده (به‌جای سفید ماندن بی‌صدا)
-% Latin font (Sans Serif) loaded from the project's fonts folder
-\babelfont{rm}{NotoSans}[
-  Path = fonts/,
-  Extension = .ttf,
-  Ligatures = TeX,
-  UprightFont = *-Regular,
-  BoldFont = *-Bold,
-  ItalicFont = *-Regular,
-  ItalicFeatures = {FakeSlant = 0.2},
-  BoldItalicFont = *-Bold,
-  BoldItalicFeatures = {FakeSlant = 0.2}
-]
-% Persian font loaded from the project's fonts folder
-\babelfont[persian]{rm}{NotoSansArabic}[
-  Path = fonts/,
-  Extension = .ttf,
-  Ligatures = TeX,
-  UprightFont = *-Regular,
-  BoldFont = *-Bold,
-  ItalicFont = *-Regular,
-  BoldItalicFont = *-Bold
-]
+\IfFileExists{fonts/NotoSansArabic-Regular.ttf}{%
+  \typeout{[thesis] fonts: using project fonts from fonts/}%
+  \babelfont{rm}{NotoSans}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold,
+    ItalicFont = *-Regular, ItalicFeatures = {FakeSlant = 0.2},
+    BoldItalicFont = *-Bold, BoldItalicFeatures = {FakeSlant = 0.2}]%
+  \babelfont[persian]{rm}{NotoSansArabic}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold,
+    ItalicFont = *-Regular, BoldItalicFont = *-Bold]%
+}{%
+\IfFileExists{thesis/fonts/NotoSansArabic-Regular.ttf}{%
+  \typeout{[thesis] fonts: using project fonts from thesis/fonts/}%
+  \babelfont{rm}{NotoSans}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold,
+    ItalicFont = *-Regular, ItalicFeatures = {FakeSlant = 0.2},
+    BoldItalicFont = *-Bold, BoldItalicFeatures = {FakeSlant = 0.2}]%
+  \babelfont[persian]{rm}{NotoSansArabic}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold,
+    ItalicFont = *-Regular, BoldItalicFont = *-Bold]%
+}{%
+\IfFontExistsTF{Noto Sans Arabic}{%
+  \typeout{[thesis] fonts: using system Noto fonts}%
+  \babelfont{rm}{Noto Sans}%
+  \babelfont[persian]{rm}{Noto Sans Arabic}%
+}{%
+  \typeout{[thesis] fonts: using TeX Live Amiri fallback}%
+  \babelfont{rm}{Latin Modern Roman}%
+  \babelfont[persian]{rm}{Amiri-Regular.ttf}[Ligatures = TeX,
+    BoldFont = Amiri-Bold.ttf, ItalicFont = Amiri-Regular.ttf]%
+}}}
 
 \usepackage{enumitem}
 \setlist[itemize]{label=\textbullet}

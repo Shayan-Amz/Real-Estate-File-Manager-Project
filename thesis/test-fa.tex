@@ -6,20 +6,26 @@
 \babelprovide[import, mapdigits, onchar=ids fonts]{persian}
 \babelprovide[import, onchar=ids fonts]{english}
 \tracinglostchars=3
-\babelfont{rm}{NotoSans}[
-  Path = fonts/,
-  Extension = .ttf,
-  Ligatures = TeX,
-  UprightFont = *-Regular,
-  BoldFont = *-Bold
-]
-\babelfont[persian]{rm}{NotoSansArabic}[
-  Path = fonts/,
-  Extension = .ttf,
-  Ligatures = TeX,
-  UprightFont = *-Regular,
-  BoldFont = *-Bold
-]
+\IfFileExists{fonts/NotoSansArabic-Regular.ttf}{%
+  \babelfont{rm}{NotoSans}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold]%
+  \babelfont[persian]{rm}{NotoSansArabic}[Path = fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold]%
+}{%
+\IfFileExists{thesis/fonts/NotoSansArabic-Regular.ttf}{%
+  \babelfont{rm}{NotoSans}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold]%
+  \babelfont[persian]{rm}{NotoSansArabic}[Path = thesis/fonts/, Extension = .ttf, Ligatures = TeX,
+    UprightFont = *-Regular, BoldFont = *-Bold]%
+}{%
+\IfFontExistsTF{Noto Sans Arabic}{%
+  \babelfont{rm}{Noto Sans}%
+  \babelfont[persian]{rm}{Noto Sans Arabic}%
+}{%
+  \babelfont{rm}{Latin Modern Roman}%
+  \babelfont[persian]{rm}{Amiri-Regular.ttf}[Ligatures = TeX,
+    BoldFont = Amiri-Bold.ttf, ItalicFont = Amiri-Regular.ttf]%
+}}}
 \begin{document}
 سلام دنیا! این یک متن آزمایشی فارسی است. ۱۲۳۴۵
 
