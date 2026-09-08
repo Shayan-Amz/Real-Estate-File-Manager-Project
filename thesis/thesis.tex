@@ -21,16 +21,6 @@
 \documentclass[11pt, a4paper]{report}
 %% FIX (compile): موتور XeLaTeX با بسته bidi؛ سریع و سازگار با محدودیت زمانی
 %% نسخه رایگان Overleaf (لوالاتک برای این سند بیش از حد کند است).
-%% FIX (compile): ذخيره جدول استاندارد لاتک «قبل» از بارگذاری bidi؛
-%% bidi در تک‌لایو ۲۰۲۶ جدول را خراب بازنويسی می‌کند.
-%% بازيابی در هوک آغاز سند و ابتدای بدنه انجام می‌شود.
-\makeatletter
-\let\amlak@tabular\tabular
-\let\amlak@iitabular\@tabular
-\let\amlak@endtabular\endtabular
-\let\amlak@array\@array
-\let\amlak@endarray\endarray
-\makeatother
 \usepackage{iftex}
 \ifXeTeX\else
   \PackageError{thesis}{Please compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)}{See README.fa.md}%
@@ -40,6 +30,21 @@
 \usepackage{fontspec}
 
 %% FIX (compile): bidi=bidi طبق تجویز بابل برای XeTeX (سریع، مناسب سقف زمانی Overleaf رایگان).
+%% FIX (compile): پکیج‌های جدول قبل از bidi لود می‌شوند تا نسخه استاندارد
+%% و مدرن جدول (post-array) ذخيره و از بازنويسی خراب bidi در امان بماند.
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{float}
+%% FIX (compile): ذخيره جدول استاندارد؛ اين نقطه بعد از array و قبل از bidi است.
+\makeatletter
+\let\amlak@tabular\tabular
+\let\amlak@iitabular\@tabular
+\let\amlak@endtabular\endtabular
+\let\amlak@array\@array
+\let\amlak@endarray\endarray
+\makeatother
 \usepackage[persian, bidi=bidi, provide=*]{babel}
 
 %% FIX (compile): حذف onchar=ids fonts — تعویض خودکار قلم در مرز حروف با
@@ -92,11 +97,8 @@
 \usepackage{setspace}
 \usepackage{titlesec}
 \usepackage{tocloft}
-\usepackage{amsmath}
-\usepackage{booktabs}
-\usepackage{array}
-\usepackage{tabularx}
-\usepackage{float}
+%% NOTE: amsmath/booktabs/array/tabularx/float به قبل از babel منتقل شدند
+%% (ذخيره جدول سالم بايد بعد از array و قبل از bidi باشد).
 
 %% FIX (3-1): رسم نمودارها با TikZ/PGF طبق دستور استاد (کتابخانه babel برای سازگاری با متن فارسی).
 \usepackage{tikz}
