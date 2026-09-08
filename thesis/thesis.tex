@@ -21,6 +21,16 @@
 \documentclass[11pt, a4paper]{report}
 %% FIX (compile): موتور XeLaTeX با بسته bidi؛ سریع و سازگار با محدودیت زمانی
 %% نسخه رایگان Overleaf (لوالاتک برای این سند بیش از حد کند است).
+%% FIX (compile): ذخيره جدول استاندارد لاتک «قبل» از بارگذاری bidi؛
+%% bidi در تک‌لایو ۲۰۲۶ جدول را خراب بازنويسی می‌کند.
+%% بازيابی در هوک آغاز سند و ابتدای بدنه انجام می‌شود.
+\makeatletter
+\let\amlak@tabular\tabular
+\let\amlak@iitabular\@tabular
+\let\amlak@endtabular\endtabular
+\let\amlak@array\@array
+\let\amlak@endarray\endarray
+\makeatother
 \usepackage{iftex}
 \ifXeTeX\else
   \PackageError{thesis}{Please compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)}{See README.fa.md}%
@@ -159,12 +169,9 @@
 %% FIX (compile): بازگردانی جدول استاندارد لاتک؛ بازنویسی bidi از جدول در
 %% تک‌لایو ۲۰۲۶ با نسخه جدید آرایه ناسازگار است (خطا در هر tabular).
 %% ستون‌ها چپ‌به‌راست می‌شوند ولی محتوای فارسی سلول‌ها کاملاً درست است.
+%% بيمه: اگر جايی نسخه bidi اجرا شد، به‌جای خطا ناديده گرفته شود.
+\providecommand*\UseMathForPositioningText{}
 \makeatletter
-\let\amlak@tabular\tabular
-\let\amlak@iitabular\@tabular
-\let\amlak@endtabular\endtabular
-\let\amlak@array\@array
-\let\amlak@endarray\endarray
 \AtBeginDocument{%
   \let\tabular\amlak@tabular
   \let\@tabular\amlak@iitabular
@@ -175,6 +182,16 @@
 \makeatother
 
 \begin{document}
+%% FIX (compile): بازيابی نهايی جدول استاندارد؛ اين خط‌ها بعد از همه هوک‌های
+%% آغاز سند اجرا می‌شوند و بازنويسی خراب bidi را در هر حالتی خنثی می‌کنند.
+%% ستون‌ها چپ‌به‌راست می‌شوند ولی محتوای فارسی سلول‌ها کاملاً درست است.
+\makeatletter
+\let\tabular\amlak@tabular
+\let\@tabular\amlak@iitabular
+\let\endtabular\amlak@endtabular
+\let\@array\amlak@array
+\let\endarray\amlak@endarray
+\makeatother
 
 \pagenumbering{alph}
 
