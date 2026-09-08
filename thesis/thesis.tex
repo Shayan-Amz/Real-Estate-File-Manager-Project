@@ -94,7 +94,10 @@
 \usepackage{listings}
 \usepackage{graphicx}
 
-\usepackage[colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue]{hyperref}
+%% FIX (compile): hyperfootnotes=false برای جلوگیری از حلقه بی‌نهایت هایپررف با پانویس فارسی؛
+%% hypertexnames=false برای یکتایی مقصد لینک‌ها با وجود سه‌بار شماره‌گذاری مجدد صفحات.
+\usepackage[colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue,
+  hyperfootnotes=false, hypertexnames=false]{hyperref}
 
 \addto\captionspersian{%
   \renewcommand{\tablename}{جدول}%
