@@ -1,7 +1,7 @@
 %% =====================================================================
 %% پایان‌نامه کارشناسی — شایان عموزاده — دانشگاه سمنان
 %% استاد راهنما: دکتر دری‌گیو (Dr. Dorrigiv)
-%% نسخه ۲ (بازسازی تمیز؛ همان محتوا و اصلاحیه‌ها با پیش‌درآمد حداقلی) — خروجی: کد LaTeX
+%% نسخه اصلاح‌شده بر اساس اصلاحیه استاد (۴ بند) — خروجی: کد LaTeX
 %% نگاشت اصلاحیه استاد به تغییرات (همه تغییرات با %% FIX علامت‌گذاری شده):
 %%   ۱-۱ نام دانشگاه یک‌بار در هر جلد ............ بررسی و تثبیت شد
 %%   ۱-۲ Dorrigiv در همه بخش‌های انگلیسی ......... بررسی و تثبیت شد
@@ -16,9 +16,11 @@
 %%   ۴-۱ اصلاح ادعای میکروسرویس .................. تثبیت + جدول کنش‌ها
 %%   ۴-۲ JWT با HMAC-SHA256 ...................... تثبیت + رابطه راستی‌آزمایی
 %% روش کامپایل: XeLaTeX (دو بار اجرا برای فهرست‌ها)، قلم‌های Noto Sans و
-%% Vazirmatn. بسته‌های لازم: tikz، algorithm، algorithmic، listings، amsmath.
+%% Noto Sans Arabic. بسته‌های لازم: tikz، algorithm، algorithmic، listings.
 %% =====================================================================
 \documentclass[11pt, a4paper]{report}
+%% FIX (compile): موتور XeLaTeX با بسته bidi؛ سریع و سازگار با محدودیت زمانی
+%% نسخه رایگان Overleaf (لوالاتک برای این سند بیش از حد کند است).
 \usepackage{iftex}
 \ifXeTeX\else
   \PackageError{thesis}{Please compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)}{See README.fa.md}%
@@ -28,22 +30,20 @@
 \usepackage{fontspec}
 
 %% FIX (compile): bidi=bidi طبق تجویز بابل برای XeTeX (سریع، مناسب سقف زمانی Overleaf رایگان).
-%% V2: فقط بسته‌های لازم؛ amsmath برای ‎\text‎ در فرمول‌ها لازم است و قبل از
-%% ذخیره جدول لود می‌شود. float برای ‎\floatname‎ الگوریتم لازم است.
+%% FIX (compile): پکیج‌های جدول قبل از bidi لود می‌شوند تا نسخه استاندارد
+%% و مدرن جدول (post-array) ذخيره و از بازنويسی خراب bidi در امان بماند.
 \usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
 \usepackage{float}
-%% V2: ذخیره جدول استاندارد هسته «قبل» از bidi؛ هیچ بسته دیگری جدول را دست نمی‌زند
-%% (array/tabularx/booktabs حذف شدند چون هر ۷ جدول فقط با امکانات هسته نوشته شده‌اند).
+%% FIX (compile): ذخيره جدول استاندارد؛ اين نقطه بعد از array و قبل از bidi است.
 \makeatletter
 \let\amlak@tabular\tabular
 \let\amlak@iitabular\@tabular
 \let\amlak@endtabular\endtabular
 \let\amlak@array\@array
 \let\amlak@endarray\endarray
-\let\amlak@arraycr\@arraycr
-\let\amlak@tabularcr\@tabularcr
-\let\amlak@xtabularcr\@xtabularcr
-\let\amlak@hline\hline
 \makeatother
 \usepackage[persian, bidi=bidi, provide=*]{babel}
 
@@ -97,8 +97,8 @@
 \usepackage{setspace}
 \usepackage{titlesec}
 \usepackage{tocloft}
-%% V2: amsmath/float به قبل از babel منتقل شدند؛ array/tabularx/booktabs حذف شدند
-%% (جدول‌ها و فرمول‌ها فقط با هسته لاتک + amsmath کار می‌کنند).
+%% NOTE: amsmath/booktabs/array/tabularx/float به قبل از babel منتقل شدند
+%% (ذخيره جدول سالم بايد بعد از array و قبل از bidi باشد).
 
 %% FIX (3-1): رسم نمودارها با TikZ/PGF طبق دستور استاد (کتابخانه babel برای سازگاری با متن فارسی).
 \usepackage{tikz}
@@ -168,9 +168,11 @@
 
 \setstretch{1.5}
 
-%% V2: بیمه ــ اگر جایی نسخه bidi جدول اجرا شد، به‌جای خطا نادیده گرفته شود.
+%% FIX (compile): بازگردانی جدول استاندارد لاتک؛ بازنویسی bidi از جدول در
+%% تک‌لایو ۲۰۲۶ با نسخه جدید آرایه ناسازگار است (خطا در هر tabular).
+%% ستون‌ها چپ‌به‌راست می‌شوند ولی محتوای فارسی سلول‌ها کاملاً درست است.
+%% بيمه: اگر جايی نسخه bidi اجرا شد، به‌جای خطا ناديده گرفته شود.
 \providecommand*\UseMathForPositioningText{}
-%% V2: بازیابی جدول استاندارد در هوک آغاز سند (لایه اول؛ لایه دوم ابتدای بدنه است).
 \makeatletter
 \AtBeginDocument{%
   \let\tabular\amlak@tabular
@@ -178,15 +180,12 @@
   \let\endtabular\amlak@endtabular
   \let\@array\amlak@array
   \let\endarray\amlak@endarray
-  \let\@arraycr\amlak@arraycr
-  \let\@tabularcr\amlak@tabularcr
-  \let\@xtabularcr\amlak@xtabularcr
-  \let\hline\amlak@hline
 }
 \makeatother
 
 \begin{document}
-%% V2: بازیابی نهایی جدول استاندارد؛ بعد از همه هوک‌ها اجرا می‌شود.
+%% FIX (compile): بازيابی نهايی جدول استاندارد؛ اين خط‌ها بعد از همه هوک‌های
+%% آغاز سند اجرا می‌شوند و بازنويسی خراب bidi را در هر حالتی خنثی می‌کنند.
 %% ستون‌ها چپ‌به‌راست می‌شوند ولی محتوای فارسی سلول‌ها کاملاً درست است.
 \makeatletter
 \let\tabular\amlak@tabular
@@ -194,10 +193,6 @@
 \let\endtabular\amlak@endtabular
 \let\@array\amlak@array
 \let\endarray\amlak@endarray
-\let\@arraycr\amlak@arraycr
-\let\@tabularcr\amlak@tabularcr
-\let\@xtabularcr\amlak@xtabularcr
-\let\hline\amlak@hline
 \makeatother
 
 \pagenumbering{alph}
@@ -696,31 +691,6 @@ $ok = hash_equals($expected, $sig);
   \label{fig:jwt_flow}
 \end{figure}
 
-%% V2 (rebuild): نمودار توالی ورود و صدور توکن (تکمیل بصری بند ۴-۲).
-شکل \ref{fig:login_seq} توالی کامل ورود کاربر، صدور توکن امضاشده و استفاده از آن در درخواست‌های بعدی را خلاصه می‌کند.
-
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}[x=1cm, y=1cm]
-    \tikzset{sq/.style={draw, thick, rounded corners=2pt, align=center, font=\small, minimum width=3.4cm, minimum height=0.8cm}}
-    \node[sq] (u) at (11.5,0) {مرورگر کاربر};
-    \node[sq] (s) at (7.3,0) {سرور متمرکز};
-    \node[sq] (d) at (3.1,0) {پایگاه داده};
-    \draw[thick, dashed] (11.5,-0.5) -- (11.5,-6.5);
-    \draw[thick, dashed] (7.3,-0.5) -- (7.3,-6.5);
-    \draw[thick, dashed] (3.1,-0.5) -- (3.1,-6.5);
-    \draw[amlakarrow] (11.5,-1.3) -- node[amlaknote, above] {نام کاربری و گذرواژه} (7.3,-1.3);
-    \draw[amlakarrow] (7.3,-2.2) -- node[amlaknote, above] {خواندن گذرواژه درهم‌سازی‌شده} (3.1,-2.2);
-    \draw[amlakarrow] (3.1,-3.0) -- node[amlaknote, above] {رکورد عضو} (7.3,-3.0);
-    \draw[amlakarrow] (7.3,-3.9) -- node[amlaknote, above] {توکن امضاشده} (11.5,-3.9);
-    \draw[amlakarrow] (11.5,-4.8) -- node[amlaknote, above] {درخواست با توکن} (7.3,-4.8);
-    \draw[amlakarrow] (7.3,-5.7) -- node[amlaknote, above] {پاسخ جیسون} (11.5,-5.7);
-    \node[font=\scriptsize] at (7.3,-7.0) {زمان از بالا به پایین پیش می‌رود};
-  \end{tikzpicture}
-  \caption{نمودار توالی ورود کاربر، صدور توکن و فراخوانی امن}
-  \label{fig:login_seq}
-\end{figure}
-
 \chapter{پیاده‌سازی سامانه}
 
 \section{مقدمه}
@@ -1207,4 +1177,5 @@ Furthermore, subtle operational challenges, including the "Token Salt Paradox" d
     {\normalsize \bfseries September 2026 \par}
 \end{titlepage}
 \end{otherlanguage}
+
 \end{document}
