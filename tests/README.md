@@ -53,3 +53,31 @@ SQL dump, user upload, or database rollback is included in the ZIP.
 Local regression success does not prove the host is recovered. The user must
 open `recover29.html?api.php=29` after installation and confirm the visible build
 marker and login/data behavior. Academic work stays paused until that confirmation.
+
+## Jarvis form fix30 (after user confirmation of recovery)
+
+Startup recovery is retained. The changes below affect only model-output handling,
+property-form consistency and the shared Jarvis prompt; they do not measure model
+quality or change STT providers, credentials, SQL schema, or token handling.
+
+```sh
+node --test tests/jarvis30.fields.test.cjs
+php tests/jarvis30.contract.php
+NODE_PATH=/tmp/recovery29-tools/node_modules node tests/jarvis30.browser.cjs
+```
+
+- 46 deterministic normalization checks: Persian/Arabic digits, Toman/Rial,
+  units, decimals/scientific values, explicit zero, invalid/ambiguous values,
+  enum aliases, booleans, phone formats, per-meter prices and protected fields.
+- 14 PHP checks execute the actual response-contract block from both API files.
+  No database or provider request is made.
+- 19 actual-Chromium checks reproduce the old price bug and exercise typed/voice
+  filling, exact submitted numeric values, full-rent layout, missing selectors,
+  populated-field visibility, reset, editing-ID/photo protection, confirmation,
+  out-of-order replies, delayed ASR and text-only chat rendering.
+
+The canonical helpers in `jarvis/fields30.js` and `bridge30.js` are embedded in
+both HTML entry pages: no extra network script is required to start the app.
+`jarvis/package30.py` builds the deployment ZIP and the rollback to f6b8687.
+The `recovery/build29.py` scripts are historical recovery builders, not the
+current build pipeline; do not run them to produce a fix30 release.

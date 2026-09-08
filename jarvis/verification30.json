@@ -1,0 +1,44 @@
+{
+  "build": "fix30-form-r1",
+  "baseline": "f6b8687",
+  "date_local": "2026-09-08",
+  "recovery29_user_confirmed": true,
+  "root_causes": [
+    "non-ASCII digits were stripped",
+    "exact-only enum caused wrong/failed visibility",
+    "delayed nested writes and chat toggle",
+    "old editing ID/draft and hidden default values survived resets"
+  ],
+  "checks": {
+    "normalization": 46,
+    "real_browser_jarvis": 19,
+    "php_contract": 14,
+    "real_browser_recovery": 10,
+    "sql_fixtures": 9,
+    "service_worker": 5,
+    "failed": 0
+  },
+  "live_model_inference_tested": false,
+  "host_deployment_tested": false,
+  "real_model_accuracy_claimed": false,
+  "unchanged": [
+    "startup map recovery",
+    "SW",
+    "auth and SQL schema",
+    "STT engines/provider settings",
+    "host config",
+    "user uploads",
+    "academic artifacts"
+  ],
+  "academic_note": "fix28 evaluator still targets its recorded old prompt; align separately before collecting results for fix30.",
+  "artifacts": {
+    "fix30-jarvis-form.zip": {
+      "bytes": 207829,
+      "sha256": "6b854c354d8902924d464ececce5434693f146a0497988369bc33c529e4dc347"
+    },
+    "fix30-rollback.zip": {
+      "bytes": 189844,
+      "sha256": "0c3a6d1a3eaed742db010346ddc84c32cc86c9be48752fb17fe1b713ee085288"
+    }
+  }
+}

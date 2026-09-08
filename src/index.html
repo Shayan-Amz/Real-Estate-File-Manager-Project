@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>املاک من — بازیابی ۲۹</title>
     <meta name="amlak-build" content="fix29-baseline26">
+    <meta name="amlak-jarvis-build" content="fix30-form-r1">
     <script>
 /* Recovery 29: diagnostic boot support only. No server data or credentials are logged. */
 (function () {
@@ -1132,14 +1133,15 @@
                 <div id="add-view" class="fade-in hidden form-card">
                     <h2 style="font-size: 18px; font-weight: bold; color: var(--primary); margin: 0 0 20px 0; border-bottom: 1px solid var(--border); padding-bottom: 12px; display: flex; align-items: center; gap: 8px;" id="form-main-title"><span>➕</span> ثبت ملک جدید</h2>
                     
+                    <div id="jarvis-draft-note" hidden style="padding:12px 16px;margin-bottom:16px;background:#eff6ff;color:#1e3a8a;border:1px solid #93c5fd;border-radius:10px;font-size:13px;line-height:1.9;" role="status"></div>
                     <form id="add-form" onsubmit="handlePropertySubmit(event)">
                         <div class="grid-2">
                             <div class="form-group"><label>معرف / مالک</label><div class="input-wrapper"><span class="input-icon">👤</span><input required type="text" id="referrer" placeholder="نام مالک..." /></div></div>
-                            <div class="form-group"><label>شماره تماس اصلی</label><div class="input-wrapper"><span class="input-icon">☎️</span><input required type="tel" id="phone" placeholder="شماره تلفن" dir="ltr" style="text-align: right;" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" /></div></div>
+                            <div class="form-group"><label>شماره تماس اصلی</label><div class="input-wrapper"><span class="input-icon">☎️</span><input required type="tel" id="phone" placeholder="شماره تلفن" dir="ltr" style="text-align: right;" maxlength="11" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9]/g, '')" /></div></div>
                         </div>
 
                         <div class="grid-2">
-                            <div class="form-group"><label>شماره تماس دوم</label><div class="input-wrapper"><span class="input-icon">☎️</span><input type="tel" id="phone2" placeholder="اختیاری" dir="ltr" style="text-align: right;" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" /></div></div>
+                            <div class="form-group"><label>شماره تماس دوم</label><div class="input-wrapper"><span class="input-icon">☎️</span><input type="tel" id="phone2" placeholder="اختیاری" dir="ltr" style="text-align: right;" maxlength="11" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9]/g, '')" /></div></div>
                             <div class="form-group"><label>شهر</label><div class="input-wrapper"><span class="input-icon">🏙️</span><input required type="text" id="city" placeholder="تهران، شیراز..." /></div></div>
                         </div>
 
@@ -1159,23 +1161,23 @@
                         </div>
 
                       <div class="grid-2">
-                            <div class="form-group"><label>متراژ</label><div class="input-wrapper"><span class="input-icon">📐</span><input required type="tel" id="area" style="text-align: right;" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 7)" placeholder="متر مربع" /></div></div>
+                            <div class="form-group"><label>متراژ</label><div class="input-wrapper"><span class="input-icon">📐</span><input required type="tel" id="area" style="text-align: right;" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9]/g, '').substring(0, 7)" placeholder="متر مربع" /></div></div>
                             <div class="form-group">
                                 <label>کاربری</label>
-                                <select id="usage" onchange="toggleLandOptions()"><option value="مسکونی">مسکونی</option><option value="تجاری">تجاری</option><option value="اداری">اداری</option><option value="زمین/کلنگی">زمین/کلنگی</option><option value="باغ">باغ</option>
-<option value="ویلایی">ویلایی</option></select>
+                                <select id="usage" required onchange="toggleLandOptions()"><option value="مسکونی">مسکونی</option><option value="تجاری">تجاری</option><option value="اداری">اداری</option><option value="زمین/کلنگی">زمین/کلنگی</option><option value="باغ">باغ</option>
+<option value="ویلایی">ویلایی</option><option value="" disabled>انتخاب کاربری…</option></select>
                             </div>
                         </div>
 
                         <!-- متراژ بنا مخصوص زمین/کلنگی -->
                         <div class="grid-2 fade-in hidden" id="land-metrics">
-                            <div class="form-group"><label>متراژ حدودی بنا (متر)</label><div class="input-wrapper"><span class="input-icon">🧱</span><input type="tel" id="build-area" dir="rtl" style="text-align: right;" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 7)" placeholder="اختیاری - متر مربع" /></div></div>
+                            <div class="form-group"><label>متراژ حدودی بنا (متر)</label><div class="input-wrapper"><span class="input-icon">🧱</span><input type="tel" id="build-area" dir="rtl" style="text-align: right;" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9]/g, '').substring(0, 7)" placeholder="اختیاری - متر مربع" /></div></div>
                         </div>
 
                          <!-- فیلدهای طبقه و واحد (محدود شده با رجکس عدد و منفی) -->
                         <div class="grid-2 fade-in" id="residential-options">
-                            <div class="form-group"><label>طبقه</label><div class="input-wrapper"><span class="input-icon">🏢</span><input type="tel" id="floor" dir="rtl" style="text-align: right;" placeholder="مثلاً: 2 (حداکثر ۲ رقم)" oninput="this.value = this.value.replace(/[^0-9\-]/g, '').replace(/(?!^)-/g, '').substring(0, this.value.startsWith('-') ? 3 : 2)" /></div></div>
-                            <div class="form-group"><label>واحد</label><div class="input-wrapper"><span class="input-icon">🚪</span><input type="tel" id="unit" dir="rtl" style="text-align: right;" placeholder="مثلاً: 14 (حداکثر ۳ رقم)" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 3)" /></div></div>
+                            <div class="form-group"><label>طبقه</label><div class="input-wrapper"><span class="input-icon">🏢</span><input type="tel" id="floor" dir="rtl" style="text-align: right;" placeholder="مثلاً: 2 (حداکثر ۲ رقم)" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9\-]/g, '').replace(/(?!^)-/g, '').substring(0, this.value.startsWith('-') ? 3 : 2)" /></div></div>
+                            <div class="form-group"><label>واحد</label><div class="input-wrapper"><span class="input-icon">🚪</span><input type="tel" id="unit" dir="rtl" style="text-align: right;" placeholder="مثلاً: 14 (حداکثر ۳ رقم)" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9]/g, '').substring(0, 3)" /></div></div>
                         </div>
 
                         <div class="grid-2" id="building-specs">
@@ -1187,14 +1189,14 @@
                 <option value="بدون خواب/سوئیت">بدون خواب/سوئیت</option>
                 <option value="1">۱ خواب</option><option value="2">۲ خواب</option><option value="3">۳ خواب</option>
                 <option value="4">۴ خواب</option><option value="5+">۵ خواب به بالا</option>
-            </select>
+            <option value="">نامشخص</option></select>
         </div>
     </div>
     <div class="form-group" id="year-group">
         <label>سال ساخت</label>
         <div class="input-wrapper">
             <span class="input-icon">🏗️</span>
-            <input type="tel" id="year-built" style="text-align: right;" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 4)" placeholder="مثال: 1402 (خالی=نامشخص)" />
+            <input type="tel" id="year-built" style="text-align: right;" oninput="this.value = JarvisFields.digits(this.value).replace(/[^0-9]/g, '').substring(0, 4)" placeholder="مثال: 1402 (خالی=نامشخص)" />
         </div>
     </div>
 </div>
@@ -1777,7 +1779,7 @@
             // ⚡ تابع هوشمند برای جداسازی ۳ رقم ۳ رقم و حذف حروف مزاحم
             window.formatPriceFilter = function(input) {
             // فقط و فقط اعداد رو نگه می‌داره (حذف حروف، +، -، و فضاهای خالی)
-            let value = input.value.replace(/[^0-9]/g, '');
+            let value = JarvisFields.digits(input.value).replace(/[^0-9]/g, '');
             
             // اگه مقداری موند، اون رو به صورت استاندارد با کاما جدا می‌کنه
             if (value !== '') {
@@ -1996,16 +1998,18 @@
         window.toggleDarkMode = function() { document.body.classList.toggle('dark'); AmlakRecovery.local.setItem('amlakDarkMode', document.body.classList.contains('dark')); document.getElementById('theme-toggle').innerText = document.body.classList.contains('dark') ? '☀️' : '🌙'; };
         
         window.setDealType = function(type) {
-            document.getElementById('deal-type').value = type;
-            ['sell', 'rent', 'full-rent'].forEach(t => document.getElementById(`btn-deal-${t}`).classList.remove('active'));
-            const tm = {'فروش':'sell', 'رهن و اجاره':'rent', 'رهن کامل':'full-rent'}; document.getElementById(`btn-deal-${tm[type]}`).classList.add('active');
-            const [pc, dc, rc] = ['price', 'deposit', 'rent'].map(id => document.getElementById(`${id}-container`));
-            const [pi, di, ri] = ['price', 'deposit', 'rent'].map(id => document.getElementById(id));
-            pi.required = false; di.required = false; ri.required = false;
-            if (type === 'فروش') { pc.classList.remove('hidden'); dc.classList.add('hidden'); rc.classList.add('hidden'); pi.required = true; } 
-            else if (type === 'رهن و اجاره') { pc.classList.add('hidden'); dc.classList.remove('hidden'); rc.classList.remove('hidden'); di.required = true; ri.required = true; } 
-            else if (type === 'رهن کامل') { pc.classList.add('hidden'); dc.classList.remove('hidden'); rc.classList.add('hidden'); di.required = true; }
+            const tm={'فروش':'sell','رهن و اجاره':'rent','رهن کامل':'full-rent'};
+            const valid=Object.prototype.hasOwnProperty.call(tm,type);
+            document.getElementById('deal-type').value=valid?type:'';
+            ['sell','rent','full-rent'].forEach(t=>document.getElementById(`btn-deal-${t}`).classList.remove('active'));
+            if(valid)document.getElementById('btn-deal-'+tm[type]).classList.add('active');
+            for(const id of ['price','deposit','rent']) {
+                const visible=!valid || (id==='price'?type==='فروش':id==='deposit'?type!=='فروش':type==='رهن و اجاره');
+                document.getElementById(id+'-container').classList.toggle('hidden',!visible);
+                document.getElementById(id).required=valid&&visible;
+            }
             window.toggleRentFilters();
+            return valid;
         };
 
         window.toggleLandOptions = function() { 
@@ -2020,7 +2024,7 @@
     const yearGroup = document.getElementById('year-group');
 
     // ۱. منطق نمایش اتاق خواب: فقط برای "مسکونی" ظاهر شود
-    const showRooms = (usage === 'مسکونی' || usage === 'ویلایی');
+    const showRooms = (usage === '' || usage === 'مسکونی' || usage === 'ویلایی');
     roomsGroup.classList.toggle('hidden', !showRooms);
 
     // ۲. منطق نمایش سال ساخت: برای همه به جز "زمین/کلنگی" و "باغ" ظاهر شود
@@ -2045,11 +2049,12 @@
     } else { 
         lo.classList.add('hidden'); 
         document.getElementById('can-partner').checked = false; 
-        if(lm) lm.classList.add('hidden');
-        if(document.getElementById('build-area')) document.getElementById('build-area').value = '';
+        const hasMetrics = usage === '' || usage === 'ویلایی' || usage === 'باغ';
+        if(lm) lm.classList.toggle('hidden', !hasMetrics);
+        if(!hasMetrics && document.getElementById('build-area')) document.getElementById('build-area').value = '';
     } 
 
-    if (usage === 'مسکونی' || usage === 'ویلایی') { 
+    if (usage === '' || ['مسکونی','ویلایی','تجاری','اداری'].includes(usage)) { 
         if(ro) ro.classList.remove('hidden'); 
     } else { 
         if(ro) ro.classList.add('hidden'); 
@@ -2352,6 +2357,14 @@
         window.handlePropertySubmit = async function(e) {
             e.preventDefault(); if(!userProfile) return; const p1 = document.getElementById('phone').value, p2 = document.getElementById('phone2').value;
             if (p1 && !/^0\d{10}$/.test(p1)) return window.showToast("❌ شماره تماس اصلی نامعتبر است."); if (p2 && !/^0\d{10}$/.test(p2)) return window.showToast("❌ شماره تماس دوم نامعتبر است.");
+            const selectedDeal = document.getElementById('deal-type').value;
+            if (!['فروش','رهن و اجاره','رهن کامل'].includes(selectedDeal)) return window.showToast('نوع واگذاری را انتخاب کنید.');
+            if (!['مسکونی','ویلایی','تجاری','اداری','زمین/کلنگی','باغ'].includes(document.getElementById('usage').value)) return window.showToast('کاربری را انتخاب کنید.');
+            for (const id of (selectedDeal==='فروش'?['price']:selectedDeal==='رهن کامل'?['deposit']:['deposit','rent'])) {
+                const el=document.getElementById(id), amount=JarvisFields.money(el.value);
+                if(amount===null)return window.showToast('مبلغ '+({price:'فروش',deposit:'رهن',rent:'اجاره'}[id])+' را به تومان و به‌صورت روشن وارد کنید.');
+                el.value=String(amount);window.formatPriceFilter(el);window.updateMoneyText(el,id+'-text');
+            }
             const btn = document.getElementById('btn-submit'); const originalText = btn.innerText; btn.innerText = 'در حال ذخیره...'; btn.disabled = true; const dealType = document.getElementById('deal-type').value;
             
             const internalNoteEl = document.getElementById('internal-note');
@@ -2429,7 +2442,8 @@
         
         window.editProperty = function(id) { 
             const prop = properties.find(p => p.id === id); if(!prop) return; 
-            editingId = id; 
+            editingId = id;
+            document.getElementById('jarvis-draft-note').hidden = true; 
             
             // ⚡ تغییر طلایی اینجاست: اول تب رو باز می‌کنیم و پاپ‌آپ رو می‌بندیم
             window.switchTab('add'); 
@@ -2493,6 +2507,10 @@
             // ⚡ اصلاح شده: هدف‌گیری دقیق فرم ثبت ملک با ID
             const propertyForm = document.getElementById('add-form');
             if(propertyForm) propertyForm.reset();
+            window.setDealType('فروش');
+            document.getElementById('geo-lat').value='';document.getElementById('geo-lng').value='';
+            window.toggleLandOptions();window.toggleGuestOptions();
+            document.getElementById('jarvis-draft-note').hidden=true;
             
             // پاکسازی عکس‌ها و متون قیمت
             tempImagesBase64 = [];
@@ -3945,7 +3963,7 @@
             // اگر دکمه به خاطر پلن قفل بود، اصلاً بازش نکن
             if (document.getElementById('jarvis-btn').classList.contains('locked-item')) return;
             document.getElementById('jarvis-modal').classList.toggle('hidden');
-            setTimeout(() => document.getElementById('jarvis-input').focus(), 100);
+            if (!document.getElementById('jarvis-modal').classList.contains('hidden')) document.getElementById('jarvis-input').focus({preventScroll:true});
         };
       // ========================================================
         // 🎙️ سیستم ضبط صدای آفلاین (مقاوم در برابر فیلترینگ)
@@ -4068,6 +4086,7 @@
                 };
 
                 mediaRecorder.onstop = async () => {
+                    const voiceCommand = beginJarvisCommand();
                     isRecording = false;
                     clearTimeout(recordGuardTimer);
                     micBtn.classList.remove('recording');
@@ -4090,7 +4109,7 @@
                     const audioBlob = await window.recordedBlobToWav(recorded);
 
                     // ⚡ اینجا فایل صوتی آماده است! می‌فرستیمش به سرور
-                    await processAudioOnServer(audioBlob);
+                    if (jarvisCommandCurrent(voiceCommand)) await processAudioOnServer(audioBlob, voiceCommand);
                 };
 
                 // شروع ضبط
@@ -4108,29 +4127,30 @@
             if (!text) return;
 
             const chatBox = document.getElementById('jarvis-chat-box');
-            chatBox.innerHTML += `<div class="jarvis-message user">${text}</div>`;
+            const command = beginJarvisCommand();
+            jarvisChatMessage(chatBox, text, 'user');
             inputEl.value = '';
 
-            const typingId = 'typing-' + Date.now();
-            chatBox.innerHTML += `<div id="${typingId}" class="jarvis-message ai" style="opacity: 0.7;">در حال تحلیل دستور... 🧠</div>`;
+            const typingId = 'typing-' + command.id + '-' + Date.now();
+            jarvisChatMessage(chatBox, 'در حال تحلیل دستور... 🧠', 'ai', typingId);
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            await callJarvisBrain({ text: text }, chatBox, typingId);
+            await callJarvisBrain({ text: text }, chatBox, typingId, command);
         };
 
         // ارسال از طریق میکروفون (تبدیل صدا به متن کدگذاری شده Base64)
         // 🎙️ ارسال مستقیم فایل ضبط‌شده به موتور تبدیل صوت به متن و سپس ارسال متن به جارویس
 // 🎙️ ارسال مستقیم فایل ضبط‌شده به موتور تبدیل صوت به متن و سپس ارسال متن به جارویس
-window.processAudioOnServer = async function(audioBlob) {
+window.processAudioOnServer = async function(audioBlob, command = beginJarvisCommand()) {
     const chatBox = document.getElementById('jarvis-chat-box');
     const inputEl = document.getElementById('jarvis-input');
     
     // ۱. نمایش حباب پیام صوتی در حال پردازش در چت کاربر
-    const tempUserMsgId = 'voice-user-' + Date.now();
-    chatBox.innerHTML += `<div id="${tempUserMsgId}" class="jarvis-message user">🎤 <i>[صدا ضبط شد، در حال تبدیل به متن...]</i></div>`;
+    const tempUserMsgId = 'voice-user-' + command.id + '-' + Date.now();
+    jarvisChatMessage(chatBox, '🎤 صدا ضبط شد، در حال تبدیل به متن…', 'user', tempUserMsgId);
     
-    const typingId = 'typing-' + Date.now();
-    chatBox.innerHTML += `<div id="${typingId}" class="jarvis-message ai" style="opacity: 0.7;">در حال شنیدن و پیاده‌سازی صدا... 🎧</div>`;
+    const typingId = 'typing-' + command.id + '-' + Date.now();
+    jarvisChatMessage(chatBox, 'در حال شنیدن و پیاده‌سازی صدا... 🎧', 'ai', typingId);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
@@ -4172,11 +4192,12 @@ window.processAudioOnServer = async function(audioBlob) {
         }
 
         const transcribedText = result.text.trim();
+        if (!jarvisCommandCurrent(command)) { document.getElementById(typingId)?.remove();jarvisChatMessage(chatBox,'پاسخ صوتی قبلی کنار گذاشته شد؛ دستور جدیدتر اولویت دارد.');return; }
 
         // ۴. جایگزین کردن متن پیاده‌شده به جای پیام موقت
         const userMsgEl = document.getElementById(tempUserMsgId);
         if (userMsgEl) {
-            userMsgEl.innerHTML = `🎤 ${window.escapeHTML(transcribedText)}`;
+            userMsgEl.textContent = '🎤 ' + transcribedText;
         }
 
         // ۵. به‌روزرسانی پیام وضعیت هوش مصنوعی
@@ -4186,137 +4207,289 @@ window.processAudioOnServer = async function(audioBlob) {
         }
 
         // ۶. ارسال متن به دست آمده به مغز پردازشگر دستورات
-        await callJarvisBrain({ text: transcribedText }, chatBox, typingId);
+        await callJarvisBrain({ text: transcribedText }, chatBox, typingId, command);
 
     } catch (err) {
         console.error("Transcribe Error:", err);
         if (document.getElementById(typingId)) document.getElementById(typingId).remove();
-        chatBox.innerHTML += `<div class="jarvis-message ai" style="color:#ef4444;">❌ خطا در پردازش صدا: ${err.message || 'ارتباط با سرور برقرار نشد.'}</div>`;
+        jarvisChatMessage(chatBox, '❌ خطا در پردازش صدا: ' + (err.message || 'ارتباط با سرور برقرار نشد.'));
         chatBox.scrollTop = chatBox.scrollHeight;
     } finally {
         if (inputEl) inputEl.placeholder = "دستور خود را بگویید یا تایپ کنید...";
     }
 };
 
-        // ⚡ تابع مرکزی با استفاده از موتور اصلی سیستم (apiCall)
-        window.callJarvisBrain = async function(payload, chatBox, typingId) {
-            try {
-                // ارسال درخواست دقیقاً مثل بقیه بخش‌های سایتت (امنیت 100%)
-                const resData = await window.apiCall('jarvisProcess', payload);
+        // BEGIN FIX30 JARVIS CONTRACT
+/* fix30: deterministic boundary between model output and the existing property form.
+ * No network, DOM, storage or database work. Unsupported/ambiguous values stay null.
+ */
+(function (root) {
+    'use strict';
+    const MAX_MONEY = Number.MAX_SAFE_INTEGER;
+    const small = {صفر:0,یک:1,یه:1,دو:2,سه:3,چهار:4,پنج:5,شش:6,شیش:6,هفت:7,هشت:8,نه:9,ده:10,یازده:11,دوازده:12,سیزده:13,چهارده:14,پانزده:15,شانزده:16,هفده:17,هجده:18,هیجده:18,نوزده:19,بیست:20,سی:30,چهل:40,پنجاه:50,شصت:60,هفتاد:70,هشتاد:80,نود:90,صد:100,یکصد:100,دویست:200,سیصد:300,چهارصد:400,پانصد:500,پونصد:500,ششصد:600,هفتصد:700,هشتصد:800,نهصد:900,نیم:0.5};
+    const ordinal = {اول:1,اولین:1,یکم:1,دوم:2,سوم:3,چهارم:4,پنجم:5,ششم:6,هفتم:7,هشتم:8,نهم:9,دهم:10,یازدهم:11,دوازدهم:12,سیزدهم:13,چهاردهم:14,پانزدهم:15};
+    const powers = {هزار:3,میلیون:6,میلیارد:9,تریلیون:12,thousand:3,million:6,billion:9,trillion:12};
+    const numericFields = {area:[1,9999999],buildArea:[0,9999999],floor:[-99,99],unit:[0,999],yearBuilt:[1,9999]};
+    const labels = {price:'قیمت کل',deposit:'رهن',rent:'اجاره',pricePerMeter:'قیمت هر متر',area:'متراژ',buildArea:'زیربنا',floor:'طبقه',unit:'واحد',yearBuilt:'سال ساخت',rooms:'تعداد خواب',phone:'تلفن',phone2:'تلفن دوم',hasParking:'پارکینگ',hasElevator:'آسانسور',hasStorage:'انباری',canExchange:'معاوضه',canPartner:'مشارکت',isPreSale:'پیش‌فروش',referrer:'نام مالک/معرف',city:'شهر',location:'محله',exactAddress:'آدرس دقیق',description:'توضیحات',internalNote:'یادداشت خصوصی'};
+    function digits(value) { return String(value).replace(/[۰-۹٠-٩]/g, ch => String(ch.charCodeAt(0) - (ch <= '٩' ? 1632 : 1776))); }
+    function clean(value) { return digits(value).normalize('NFKC').toLowerCase().replace(/ي|ى/g,'ی').replace(/ك/g,'ک').replace(/\u200c|\u200d/g,' ').replace(/[\u064b-\u065f\u0670\u0640\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim(); }
+    const missing = value => value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
+    function atom(token) {
+        if (Object.prototype.hasOwnProperty.call(small,token)) return small[token];
+        const s = token.replace(/٬/g,',').replace(/٫/g,'.').replace(/−/g,'-');
+        const plain = /^[+-]?\d+(?:\.\d+)?(?:e[+-]?\d{1,2})?$/i.test(s);
+        const grouped = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(s);
+        if (!plain && !grouped) return null;
+        const value = Number(s.replace(/,/g,''));
+        return Number.isFinite(value) && Math.abs(value) <= MAX_MONEY ? value : null;
+    }
+    function group(tokens) {
+        if (!tokens.length) return null;
+        const decimal = tokens.indexOf('ممیز');
+        if (decimal !== -1) {
+            if (tokens.lastIndexOf('ممیز') !== decimal) return null;
+            const whole=group(tokens.slice(0,decimal)), tail=tokens.slice(decimal+1);
+            let fraction;
+            if(tail.length && tail.every(t=>atom(t)!==null && Number.isInteger(atom(t)) && atom(t)>=0 && atom(t)<=9)) fraction=tail.map(t=>String(atom(t))).join('');
+            else { const n=group(tail); if(n===null || !Number.isInteger(n) || n<0)return null; fraction=String(n); }
+            return whole!==null && whole>=0 && Number.isInteger(whole) && fraction.length<=6 ? Number(whole+'.'+fraction) : null;
+        }
+        let value=0, previous=Infinity, needNumber=true;
+        for(const token of tokens) {
+            if(token==='و') { if(needNumber)return null;needNumber=true;continue; }
+            if(!needNumber)return null;
+            const n=atom(token); if(n===null || (previous!==Infinity && (n>=previous || !Number.isInteger(previous))))return null;
+            value+=n;previous=n;needNumber=false;
+        }
+        return needNumber ? null : value;
+    }
+    // Decimal exponent shifting avoids 5.31 * 1e9 floating-point drift.
+    function shift(value,power) { const parts=String(value).split('e'); return Number(parts[0]+'e'+((Number(parts[1])||0)+power)); }
+    function numberText(value, allowRemainder = true) {
+        if(typeof value==='number')return Number.isFinite(value)?value:null;
+        if(typeof value!=='string'||value.length>180)return null;
+        let text=clean(value).replace(/٫/g,'.').replace(/،/g,' و ');
+        text=text.replace(/(هزار|میلیون|میلیارد|تریلیون|thousand|million|billion|trillion)/g,' $1 ').replace(/\s+/g,' ').trim();
+        const tokens=text.split(' ').filter(Boolean); let total=0,buffer=[],lastPower=null,endsScale=false;
+        for(const token of tokens) {
+            if(Object.prototype.hasOwnProperty.call(powers,token)) {
+                const power=powers[token];
+                if(!buffer.length && endsScale && power>lastPower) { total=shift(total,power);lastPower+=power;continue; }
+                const n=buffer.length?group(buffer):((lastPower===null && power===3)?1:null);
+                if(n===null || (lastPower!==null && power>=lastPower))return null;
+                total+=shift(n,power);buffer=[];lastPower=power;endsScale=true;
+            } else {
+                if(token==='و' && endsScale && !buffer.length){endsScale=false;continue;}
+                buffer.push(token);endsScale=false;
+            }
+        }
+        if(buffer.length) {
+            const tail=group(buffer);if(tail===null)return null;
+            if(lastPower!==null) {
+                // "یک میلیارد و نیم" is explicit; "یک میلیارد و دویست" is not.
+                if(buffer.length===1 && buffer[0]==='نیم')total+=shift(tail,lastPower);
+                else if(allowRemainder || lastPower<=3)total+=tail;
+                else return null;
+            } else total=tail;
+        } else if(!endsScale)return null;
+        return Number.isFinite(total) ? total : null;
+    }
+    function money(value) {
+        if(missing(value))return null;
+        let rial=false, text=value;
+        if(typeof value==='string') {
+            text=clean(value);
+            const units=text.match(/تومان|تومن|ریال|tomans?|rials?|irr/g)||[];
+            const types=new Set(units.map(u=>/ریال|rial|irr/.test(u)?'rial':'toman'));
+            if(types.size>1)return null;rial=types.has('rial');
+            text=text.replace(/تومان|تومن|ریال|tomans?|rials?|irr/g,' ').trim();
+        }
+        let n=numberText(text,false);if(n===null)return null;if(rial)n=shift(n,-1);
+        return Number.isSafeInteger(n)&&n>=0&&n<=MAX_MONEY?n:null;
+    }
+    function quantity(value,min,max) {
+        if(missing(value))return null;
+        let text=value;
+        if(typeof value==='string') {
+            text=clean(value).replace(/متر\s*مربع|مترمربعی|متری|متر|سال\s*ساخت|سال|طبقه|واحد|خواب|sqm|m²|m2/g,' ').trim();
+            if(text==='همکف')text='0';
+            if(Object.prototype.hasOwnProperty.call(ordinal,text))text=String(ordinal[text]);
+            if(text.startsWith('منفی ')) { const n=numberText(text.slice(5));return n!==null&&Number.isInteger(n)&&-n>=min&&-n<=max?-n:null; }
+        }
+        const n=numberText(text);return Number.isSafeInteger(n)&&n>=min&&n<=max?n:null;
+    }
+    function boolean(value) {
+        if(typeof value==='boolean')return value;
+        if(value===1||value===0)return value===1;
+        if(typeof value!=='string')return null;
+        const s=clean(value);
+        if(['true','1','yes','بله','دارد','بلی'].includes(s))return true;
+        if(['false','0','no','خیر','ندارد','نه'].includes(s))return false;
+        return null;
+    }
+    function enumValue(value,options) {
+        if(typeof value!=='string')return null;
+        const key=clean(value).replace(/[\/_-]+/g,' ').replace(/\s+/g,' ').trim();
+        for(const [name,aliases] of Object.entries(options)) if([name,...aliases].some(v=>clean(v).replace(/[\/_-]+/g,' ').replace(/\s+/g,' ').trim()===key))return name;
+        return null;
+    }
+    const deals={'فروش':['خرید','خرید و فروش','sale','sell'],'رهن و اجاره':['اجاره','رهن اجاره','رهن/اجاره','رهن واجاره','rent','rental'],'رهن کامل':['رهنکامل','full rent','full-rent']};
+    const usages={'مسکونی':['آپارتمان','اپارتمان','خانه','منزل','سوئیت','سوییت','آپارتمانی','apartment','residential'],'ویلایی':['ویلا','ویلائی','خانه باغ','villa'],'تجاری':['مغازه','دکان','commercial','shop'],'اداری':['دفتر','دفتر کار','مطب','office'],'زمین/کلنگی':['زمین','کلنگی','زمین کلنگی','land'],'باغ':['باغچه','garden']};
+    function phone(value) {
+        if(missing(value)||(!['string','number'].includes(typeof value)))return null;
+        let text=digits(value).replace(/[\s()\-]/g,'');
+        if(/^(?:\+98|0098)\d{10}$/.test(text))text='0'+text.replace(/^(?:\+98|0098)/,'');
+        else if(/^98\d{10}$/.test(text))text='0'+text.slice(2);
+        else if(typeof value==='number' && /^\d{10}$/.test(text))text='0'+text;
+        return /^0\d{10}$/.test(text)?text:null;
+    }
+    function normalize(raw) {
+        if(!raw || typeof raw!=='object' || Array.isArray(raw))throw new Error('مشخصات ملک در پاسخ مدل معتبر نیست.');
+        const values={},warnings=[];
+        function take(key,value) { values[key]=value; if(!missing(raw[key]) && value===null)warnings.push((labels[key]||key)+' نامعتبر یا مبهم بود و نیاز به بررسی دارد.'); }
+        values.dealType=enumValue(raw.dealType,deals);values.usage=enumValue(raw.usage,usages);
+        if(!values.dealType)warnings.push('نوع واگذاری را انتخاب کنید.');
+        if(!values.usage)warnings.push('کاربری را انتخاب کنید.');
+        for(const [key,[min,max]] of Object.entries(numericFields))take(key,quantity(raw[key],min,max));
+        for(const key of ['price','deposit','rent','pricePerMeter'])take(key,money(raw[key]));
+        for(const key of ['phone','phone2']) { take(key,phone(raw[key])); if(typeof raw[key]==='number' && values[key] && String(raw[key]).length===10) warnings.push('صفر ابتدایی '+labels[key]+' که مدل عددی فرستاده بود برگردانده شد؛ شماره را بررسی کنید.'); }
+        for(const key of ['referrer','city','location','exactAddress','description','internalNote']) {
+            const v=raw[key];take(key,typeof v==='string'&&v.trim()&&v.length<=8000?v.trim():null);
+        }
+        for(const key of ['hasParking','hasElevator','hasStorage','canExchange','canPartner','isPreSale'])take(key,boolean(raw[key]));
+        let rooms=null;
+        if(typeof raw.rooms==='string'&&/^(بدون\s*خواب(?:\s*\/\s*سوئیت)?|سوئیت|سوییت|استودیو|studio)$/.test(clean(raw.rooms)))rooms='بدون خواب/سوئیت';
+        else if(typeof raw.rooms==='string'&&/^(?:5\+|5\s*(?:به\s*بالا|خواب به بالا))$/.test(clean(raw.rooms)))rooms='5+';
+        else {const n=quantity(raw.rooms,0,99);if(n!==null)rooms=n===0?'بدون خواب/سوئیت':n>=5?'5+':String(n);}
+        take('rooms',rooms);
+        if(values.price===null && values.pricePerMeter!==null && values.area>0 && values.dealType==='فروش') {
+            const total=values.pricePerMeter*values.area;
+            if(Number.isSafeInteger(total) && total<=MAX_MONEY) {values.price=total;warnings.push('قیمت کل از قیمت هر متر × متراژ محاسبه شد؛ آن را تأیید کنید.');}
+            else warnings.push('قیمت کل محاسبه‌شده از محدودهٔ عددی مجاز بیشتر است.');
+        }
+        if(values.pricePerMeter!==null && (values.dealType!=='فروش'||!values.area))warnings.push('برای محاسبهٔ قیمت متری، نوع فروش و متراژ معتبر لازم است.');
+        if((values.dealType==='فروش' && (values.deposit>0||values.rent>0)) || (values.dealType==='رهن کامل' && values.rent>0) || (['رهن کامل','رهن و اجاره'].includes(values.dealType) && values.price>0)) {
+            values.dealType=null;warnings.push('نوع واگذاری و مبلغ‌ها ناسازگارند؛ نوع واگذاری را دوباره انتخاب کنید.');
+        }
+        const meaningful=Object.entries(values).some(([k,v])=>!missing(v) && (typeof v!=='boolean'||v===true));
+        return {values,warnings:[...new Set(warnings)],meaningful};
+    }
+    const api={digits,clean,money,quantity,boolean,phone,normalize};
+    if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.JarvisFields=api;
+})(typeof window!=='undefined'?window:globalThis);
 
-                if (document.getElementById(typingId)) document.getElementById(typingId).remove();
-
-                const aiMsg = resData.ai_message;
-                const action = resData.action;
-                const params = resData.params;
-
-                // نمایش جواب جارویس
-                chatBox.innerHTML += `<div class="jarvis-message ai">${aiMsg}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-
-                // ⚡ جادوی اتوماسیون: اجرای فرمان پر کردن فرم
-                if (action === 'openPropertyModal') {
-                    setTimeout(() => {
-                        window.toggleJarvis(); // بستن موقت چت جارویس
-                        if (typeof window.switchTab === 'function') window.switchTab('add'); // باز کردن تب ثبت
-                        
-                        // صبر می‌کنیم تا تب کاملاً باز بشه
-                        setTimeout(() => {
-                            console.log("🧠 دیتای خالص هوش مصنوعی:", params);
-                            
-                            try {
-                                // ۱. نوع واگذاری
-                                if (params.dealType) window.setDealType(params.dealType);
-                                
-                                // ۲. کاربری (تشخیص هوشمند مسکونی/تجاری/ویلایی)
-                                if (params.usage) {
-                                    const uEl = document.getElementById('usage');
-                                    if (uEl) {
-                                        uEl.value = params.usage;
-                                        if (typeof window.toggleLandOptions === 'function') window.toggleLandOptions();
-                                    }
-                                }
-                                
-                                // ۳. متراژ و محله
-                                if (params.area && document.getElementById('area')) {
-                                    document.getElementById('area').value = String(params.area).replace(/[^0-9]/g, '');
-                                }
-                                if (params.location && document.getElementById('location')) {
-                                    document.getElementById('location').value = params.location;
-                                }
-                                
-                                // ۴. قیمت‌ها (با تفکیک دقیق فروش و رهن و اجاره)
-                                setTimeout(() => {
-                                    if (params.dealType === 'فروش' && params.price) {
-                                        const pEl = document.getElementById('price');
-                                        if (pEl) {
-                                            pEl.value = window.formatMoney(String(params.price).replace(/[^0-9]/g, ''));
-                                            window.updateMoneyText(pEl, 'price-text');
-                                        }
-                                    } else {
-                                        if (params.deposit && document.getElementById('deposit')) {
-                                            const dEl = document.getElementById('deposit');
-                                            dEl.value = window.formatMoney(String(params.deposit).replace(/[^0-9]/g, ''));
-                                            window.updateMoneyText(dEl, 'deposit-text');
-                                        }
-                                        if (params.rent && document.getElementById('rent') && params.dealType === 'رهن و اجاره') {
-                                            const rEl = document.getElementById('rent');
-                                            rEl.value = window.formatMoney(String(params.rent).replace(/[^0-9]/g, ''));
-                                            window.updateMoneyText(rEl, 'rent-text');
-                                        }
-                                    }
-                                }, 250);
-
-                                // 🚀 ۵. جادوی جدید: پر کردن بقیه فیلدهای متنی و عددی (مالک، شهر، طبقه و...)
-                                const fieldMap = {
-                                    'referrer': params.referrer,
-                                    'phone': params.phone,
-                                    'city': params.city,
-                                    'exact-address': params.exactAddress,
-                                    'floor': params.floor,
-                                    'unit': params.unit,
-                                    'year-built': params.yearBuilt,
-                                    'build-area': params.buildArea,
-                                    'description': params.description,
-                                    'internal-note': params.internalNote
-                                };
-                                
-                                for (const [id, value] of Object.entries(fieldMap)) {
-                                    if (value !== null && value !== undefined && document.getElementById(id)) {
-                                        document.getElementById(id).value = value;
-                                    }
-                                }
-
-                                // 🚀 ۶. تنظیم چک‌باکس‌ها (امکانات رفاهی)
-                                if (document.getElementById('has-parking')) document.getElementById('has-parking').checked = !!params.hasParking;
-                                if (document.getElementById('has-elevator')) document.getElementById('has-elevator').checked = !!params.hasElevator;
-                                if (document.getElementById('has-storage')) document.getElementById('has-storage').checked = !!params.hasStorage;
-
-                                // 🚀 ۷. تنظیم تعداد خواب (هماهنگ با Select)
-                                if (params.rooms !== null && params.rooms !== undefined && document.getElementById('rooms')) {
-                                     let rVal = String(params.rooms);
-                                     if(rVal >= 5) rVal = "5+";
-                                     if(rVal == 0 || rVal.includes("بدون")) rVal = "بدون خواب/سوئیت";
-                                     document.getElementById('rooms').value = rVal;
-                                }
-
-                                window.showToast("✨ جارویس فرم را با موفقیت پر کرد!");
-
-                            } catch (e) {
-                                console.error("❌ خطای جاوااسکریپت:", e);
-                            }
-                        }, 600);
-                    }, 1500);
+        // fix30: one synchronous, validated draft transaction; no timeout-based field writes.
+        let jarvisCommandSequence = 0;
+        function jarvisAccountKey() { return userProfile ? JSON.stringify([userProfile.agencyId,userProfile.role,userProfile.token]) : ''; }
+        function jarvisActiveView() { return ['list','map','add','demands','add-demand','members','dashboard','profile','guest-search','guest-agencies','guest-properties'].find(id=>{const el=document.getElementById(id+'-view');return el&&!el.classList.contains('hidden');}) || ''; }
+        function jarvisDraftFingerprint() {
+            const form=document.getElementById('add-form');
+            return JSON.stringify({editingId,fields:Array.from(form.querySelectorAll('input,select,textarea')).filter(el=>el.type!=='file').map(el=>[el.id,el.type==='checkbox'?el.checked:el.value]),images:tempImagesBase64});
+        }
+        function jarvisDraftIsDirty() {
+            if (editingId || tempImagesBase64.length) return true;
+            return Array.from(document.getElementById('add-form').querySelectorAll('input,select,textarea')).some(el=>{
+                if (el.type==='file') return false;
+                if (el.type==='checkbox') return el.checked!==el.defaultChecked;
+                if (el.type==='hidden') return el.value!==({ 'deal-type':'فروش','geo-lat':'','geo-lng':'' }[el.id] ?? el.defaultValue);
+                if (el.tagName==='SELECT') {
+                    const initial=Array.from(el.options).find(option=>option.defaultSelected) || el.options[0];
+                    return el.value!==(initial?.value || '');
                 }
-
-            } catch (error) {
-                console.error("Jarvis Error:", error);
-                if (document.getElementById(typingId)) document.getElementById(typingId).remove();
-                chatBox.innerHTML += `<div class="jarvis-message ai" style="color:#ef4444;">❌ ارور: ${error.message || 'ارتباط با سرور قطع شد'}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
+                return el.value!==el.defaultValue;
+            });
+        }
+        function beginJarvisCommand() {
+            return {id:++jarvisCommandSequence,account:jarvisAccountKey(),fingerprint:jarvisDraftFingerprint(),view:jarvisActiveView(),
+                wasChatOpen:!document.getElementById('jarvis-modal').classList.contains('hidden')};
+        }
+        function jarvisCommandCurrent(context) { return context.id===jarvisCommandSequence && context.account===jarvisAccountKey(); }
+        function jarvisChatMessage(chatBox, text, role='ai', id=null) {
+            const bubble=document.createElement('div');bubble.className='jarvis-message '+role;bubble.textContent=String(text || '');
+            if(id)bubble.id=id;chatBox.appendChild(bubble);chatBox.scrollTop=chatBox.scrollHeight;return bubble;
+        }
+        function jarvisReviewNote(result) {
+            const notes=[...result.warnings];
+            const required={referrer:'نام مالک/معرف',phone:'شماره تماس',city:'شهر',location:'محله',area:'متراژ'};
+            for(const [id,label] of Object.entries(required)) if(!document.getElementById(id).value.trim())notes.push(label+' را تکمیل کنید.');
+            const deal=document.getElementById('deal-type').value;
+            if(deal==='فروش'&&!document.getElementById('price').value)notes.push('قیمت کل از متن مشخص نشد؛ آن را وارد کنید.');
+            if(['رهن کامل','رهن و اجاره'].includes(deal)&&!document.getElementById('deposit').value)notes.push('مبلغ رهن را تکمیل کنید.');
+            if(deal==='رهن و اجاره'&&!document.getElementById('rent').value)notes.push('مبلغ اجاره را تکمیل کنید (صفر نیز مقدار معتبر است).');
+            const box=document.getElementById('jarvis-draft-note');box.replaceChildren();box.hidden=false;
+            const heading=document.createElement('strong');heading.textContent='پیش‌نویس جارویس · اصلاح فرم ۳۰';box.appendChild(heading);
+            const hint=document.createElement('div');hint.textContent='هنوز هیچ ملکی ذخیره نشده است؛ قیمت‌ها به تومان‌اند. پیش از ثبت همهٔ مقدارها را بررسی کنید.';box.appendChild(hint);
+            if(notes.length) { const ul=document.createElement('ul');for(const note of new Set(notes)){const li=document.createElement('li');li.textContent=note;ul.appendChild(li);}box.appendChild(ul); }
+        }
+        function applyJarvisDraft(result, askBeforeReplace=false) {
+            if(!userProfile || !['مدیر','مشاور'].includes(userProfile.role)) { window.showToast('ابتدا وارد حساب خود شوید.');return false; }
+            if(!result.meaningful) { window.showToast('مشخصات قابل انتقالی دریافت نشد.');return false; }
+            if(askBeforeReplace && jarvisDraftIsDirty() && !window.confirm('فرم فعلی یا فایل در حال ویرایش، مقدار دارد. پیش‌نویس جدید جارویس جایگزین آن شود؟ اطلاعات قبلی در سرور تغییر نمی‌کند.')) return false;
+            const v=result.values,form=document.getElementById('add-form');
+            // Clear editing identity, pictures and visibility defaults only after explicit consent.
+            editingId=null;form.reset();tempImagesBase64=[];window.renderImagePreviews();
+            document.getElementById('geo-lat').value='';document.getElementById('geo-lng').value='';
+            document.getElementById('form-main-title').innerHTML='<span>➕</span> ثبت ملک جدید';
+            document.getElementById('btn-submit').innerText='ثبت ملک';document.getElementById('btn-cancel-edit').classList.add('hidden');
+            const tabText=document.getElementById('tab-add-text');if(tabText)tabText.innerText='ثبت ملک';
+            document.getElementById('usage').value=v.usage || '';
+            window.toggleLandOptions();window.setDealType(v.dealType || '');window.toggleGuestOptions();
+            const fields={referrer:'referrer',phone:'phone',phone2:'phone2',city:'city',location:'location',exactAddress:'exact-address',area:'area',
+                floor:'floor',unit:'unit',yearBuilt:'year-built',buildArea:'build-area',description:'description',internalNote:'internal-note'};
+            for(const [key,id] of Object.entries(fields)) {
+                const el=document.getElementById(id);if(v[key]!==null && v[key]!==undefined)el.value=String(v[key]);
+                el.dispatchEvent(new Event('input',{bubbles:true}));
+            }
+            document.getElementById('rooms').value=v.rooms===null?'':v.rooms;
+            const checks={hasParking:'has-parking',hasElevator:'has-elevator',hasStorage:'has-storage',canExchange:'can-exchange',canPartner:'can-partner',isPreSale:'can-presale'};
+            for(const [key,id] of Object.entries(checks))document.getElementById(id).checked=v[key]===true;
+            // Fill every known amount after visibility is settled. No truthy checks: 0 is valid.
+            for(const key of ['price','deposit','rent']) {
+                const el=document.getElementById(key);el.value=v[key]===null?'':String(v[key]);
+                el.dispatchEvent(new Event('input',{bubbles:true}));
+            }
+            // Never leave a populated model field hidden from the user's review.
+            if(v.floor!==null || v.unit!==null)document.getElementById('residential-options').classList.remove('hidden');
+            if(v.buildArea!==null)document.getElementById('land-metrics').classList.remove('hidden');
+            if(v.rooms!==null)document.getElementById('rooms-group').classList.remove('hidden');
+            if(v.yearBuilt!==null)document.getElementById('year-group').classList.remove('hidden');
+            if(v.canPartner===true)document.getElementById('land-options').classList.remove('hidden');
+            const roomsVisible=!document.getElementById('rooms-group').classList.contains('hidden'), yearVisible=!document.getElementById('year-group').classList.contains('hidden');
+            document.getElementById('building-specs').classList.toggle('hidden',!roomsVisible&&!yearVisible);
+            document.getElementById('building-specs').classList.toggle('grid-2',roomsVisible&&yearVisible);
+            document.getElementById('jarvis-modal').classList.add('hidden'); // Never toggle a closed chat back open.
+            window.switchTab('add');jarvisReviewNote(result);
+            window.showToast('پیش‌نویس آمادهٔ بازبینی است؛ برای ذخیره باید خودت «ثبت ملک» را بزنی.');
+            return true;
+        }
+        window.callJarvisBrain = async function(payload, chatBox, typingId, context=beginJarvisCommand()) {
+            try {
+                const resData=await window.apiCall('jarvisProcess',payload);
+                document.getElementById(typingId)?.remove();
+                if(!jarvisCommandCurrent(context)) { jarvisChatMessage(chatBox,'پاسخ دستور قبلی کنار گذاشته شد تا فرمِ دستور جدید تغییر نکند.');return; }
+                const message=jarvisChatMessage(chatBox,'پیش‌نویس؛ هنوز ثبت نشده. '+(typeof resData.ai_message==='string'?resData.ai_message:'خروجی مدل دریافت شد.'));
+                if(!resData.params || typeof resData.params!=='object' || Array.isArray(resData.params)) throw new Error('خروجی مشخصات ملک معتبر نیست.');
+                const result=JarvisFields.normalize(resData.params);
+                if(resData.jarvisBuild!=='fix30-form-r1')result.warnings.push('نسخهٔ جدید پاسخ سرور تأیید نشد؛ فایل‌های API بستهٔ ۳۰ را هم بررسی کنید.');
+                if(!result.meaningful) { jarvisChatMessage(chatBox,'مشخصات کافی دریافت نشد؛ نوع ملک، نوع واگذاری و مبلغ را روشن‌تر بنویسید.');return; }
+                const changed=context.fingerprint!==jarvisDraftFingerprint() || context.view!==jarvisActiveView()
+                    || (context.wasChatOpen && document.getElementById('jarvis-modal').classList.contains('hidden'));
+                if(changed || jarvisDraftIsDirty()) {
+                    const note=document.createElement('p');note.textContent='برای حفظ فرم فعلی، چیزی خودکار عوض نشد. در صورت تمایل پیش‌نویس جدید را اعمال کنید.';message.appendChild(note);
+                    const button=document.createElement('button');button.type='button';button.className='btn-modern';button.style.cssText='margin-top:8px;padding:8px 12px;';button.textContent='اعمال پیش‌نویس جدید';
+                    button.addEventListener('click',()=>{
+                        if(context.account!==jarvisAccountKey()) { window.showToast('حساب تغییر کرده است؛ دستور را دوباره بفرستید.');return; }
+                        if(applyJarvisDraft(result,true)) { ++jarvisCommandSequence;button.disabled=true;button.textContent='پیش‌نویس اعمال شد'; }
+                    });message.appendChild(button);chatBox.scrollTop=chatBox.scrollHeight;
+                    window.showToast('نتیجهٔ جارویس آماده است؛ برای حفظ تغییراتت، از داخل گفتگو تأیید کن.');
+                } else applyJarvisDraft(result);
+            } catch(error) {
+                document.getElementById(typingId)?.remove();
+                jarvisChatMessage(chatBox,'❌ '+(error.message || 'ارتباط با سرور قطع شد'));
             }
         };
-        
+        // END FIX30 JARVIS CONTRACT
+
         setTimeout(function () {
             try { boot(); } catch (error) { AmlakRecovery.report('راه‌اندازی: ' + error.message); }
             AmlakRecovery.optionalAssets();

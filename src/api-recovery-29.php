@@ -647,7 +647,7 @@ if ($method === 'POST') {
             // 🔎 نسخه‌نما: در هر پیام خطا چاپ می‌شود تا معلوم شود کدام فایل
             //    واقعاً روی هاست است. (چند بار نتوانستیم تشخیص دهیم آپلود
             //    انجام شده یا نه.)
-            if (!defined('JARVIS_BUILD')) { define('JARVIS_BUILD', 'fix21-r4'); }
+            if (!defined('JARVIS_BUILD')) { define('JARVIS_BUILD', 'fix30-form-r1'); }
 
             $jarvisEndpoints = array_values(array_unique(array_filter([
                 'https://openrouter.ai/api/v1/chat/completions',
@@ -662,8 +662,10 @@ if ($method === 'POST') {
             // شناسهٔ بدون «/» نامعتبر است و اگر داخل آرایهٔ models برود ممکن است
             // کل درخواست ۴۰۰ شود — پس ردش می‌کنیم و به لاگ می‌نویسیم.
             if ($cfgModel !== '' && strpos($cfgModel, '/') === false) {
-                error_log('[Jarvis] OPENROUTER_MODEL نامعتبر نادیده گرفته شد: ' . $cfgModel);
-                $cfgModel = '';
+                // Never silently substitute another model for the configured choice.
+                http_response_code(400);
+                echo json_encode(['error' => JARVIS_BUILD . ': شناسهٔ مدل تنظیم‌شده باید به شکل provider/model باشد؛ مدل دیگری جایگزین نشد.'], JSON_UNESCAPED_UNICODE);
+                exit;
             }
             // 🎯 فقط یک مدل: همان که خودت در OPENROUTER_MODEL گذاشته‌ای.
             //    (طبق درخواست، لیست جایگزین حذف شد. اگر این مدل منسوخ یا
@@ -675,58 +677,13 @@ if ($method === 'POST') {
             }
 
             // ⚡ دیکشنری هوشمند: آموزش کلمات و تفکیک داده‌ها به جارویس
-            $systemPrompt = 'شما "جارویس" هستید، دستیار فوق‌هوشمند املاک. 
-وظیفه شما استخراج دقیق مشخصات ملک از پیام کاربر است.
-
-قوانین تشخیص کاربری (usage):
-- "آپارتمان"، "خانه"، "منزل"، "سوییت" -> مسکونی
-- "ویلا"، "خانه باغ" -> ویلایی
-- "مغازه"، "پاساژ"، "دکان"، "تجاری" -> تجاری
-- "دفتر کار"، "مطب"، "شرکت" -> اداری
-- "زمین"، "کلنگی"، "خاک" -> زمین/کلنگی
-- "باغ"، "باغچه" -> باغ
-
-قوانین واگذاری (dealType):
-- خرید / فروش -> فروش
-- رهن و اجاره / اجاره -> رهن و اجاره
-- رهن کامل -> رهن کامل
-
-قوانین استخراج و تفکیک (بسیار مهم):
-۱. نام مالک باید در کلید referrer و تلفن مالک در کلید phone قرار گیرد.
-۲. تعداد خواب (rooms)، طبقه (floor) و واحد (unit) حتما باید استخراج شوند و فقط شامل عدد باشند.
-۳. امکانات (hasElevator, hasParking, hasStorage) فقط باید true یا false باشند.
-۴. سال ساخت (yearBuilt) فقط عدد باشد.
-۵. تفکیک آدرس: نام محله یا محدوده کلی را در (location) بنویسید و ادامه آدرس دقیق (خیابان، کوچه، پلاک و...) را در (exactAddress) قرار دهید.
-۶. قانون توضیحات: به هیچ وجه اطلاعاتی که در فیلدهای بالا (مثل خواب، طبقه، قیمت، امکانات و...) ثبت کرده‌اید را در کلیدهای (description) و (internalNote) تکرار نکنید! در توضیحات فقط ویژگی‌های اضافه (مثل غرق نور، نیاز به بازسازی، معاوضه با ماشین، ویو ابدی و...) را بنویسید.
-
-شما باید فقط و فقط یک خروجی JSON معتبر برگردانید. تمام کلیدها باید دقیقا مطابق ساختار زیر باشند و برای مقادیر نامشخص از null استفاده کنید (مقادیر عددی را بدون کوتیشن بنویسید):
-{
-  "ai_message": "پیام تایید کوتاه به فارسی",
-  "action": "openPropertyModal",
-  "params": {
-    "dealType": null,
-    "usage": null,
-    "area": null,
-    "price": null,
-    "deposit": null,
-    "rent": null,
-    "location": null,
-    "city": null,
-    "exactAddress": null,
-    "referrer": null,
-    "phone": null,
-    "rooms": null,
-    "floor": null,
-    "unit": null,
-    "hasElevator": false,
-    "hasParking": false,
-    "hasStorage": false,
-    "description": null,
-    "internalNote": null,
-    "yearBuilt": null,
-    "buildArea": null
-  }
-}';
+            // fix30: one shared, versioned contract; no secret or user data in this file.
+            $systemPrompt = @file_get_contents(__DIR__ . '/jarvis-prompt30.txt');
+            if ($systemPrompt === false || trim($systemPrompt) === '') {
+                http_response_code(503);
+                echo json_encode(['error' => 'راهنمای جارویس پیدا نشد؛ فایل jarvis-prompt30.txt بستهٔ اصلاح فرم را هم بارگذاری کنید.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
 
             $data = [
                 "model"  => $jarvisModel,
@@ -799,7 +756,7 @@ if ($method === 'POST') {
 
             $aiResult = json_decode($response, true);
             
-            if ($httpCode == 200 && isset($aiResult['choices'][0]['message']['content'])) {
+            if ($httpCode == 200 && isset($aiResult['choices'][0]['message']['content']) && is_string($aiResult['choices'][0]['message']['content'])) {
                 $aiContent = $aiResult['choices'][0]['message']['content'];
                 
                 // 🧹 پاک‌کننده هوشمند: حذف کدهای تزئینی که هوش مصنوعی تولید می‌کند
@@ -809,17 +766,27 @@ if ($method === 'POST') {
 
                 $parsedData = json_decode($aiContent, true);
 
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    echo json_encode([
-                        'response' => [
-                            'success' => true,
-                            'ai_message' => $parsedData['ai_message'] ?? "آماده شد.",
-                            'action' => $parsedData['action'] ?? null,
-                            'params' => $parsedData['params'] ?? []
-                        ]
-                    ]);
+                $shape = json_decode($aiContent);
+                if (is_object($shape) && isset($shape->params) && is_object($shape->params)) {
+                    // Model output cannot set record identity, tenant, status, images, or publication flags.
+                    $allowed = ['dealType','usage','area','buildArea','price','deposit','rent','pricePerMeter',
+                        'city','location','exactAddress','referrer','phone','phone2','rooms','floor','unit','yearBuilt',
+                        'hasParking','hasElevator','hasStorage','canExchange','canPartner','isPreSale','description','internalNote'];
+                    $params = []; $hasFacts = false;
+                    foreach ($allowed as $field) {
+                        $value = $parsedData['params'][$field] ?? null;
+                        if (!is_scalar($value) && $value !== null) $value = null;
+                        $params[$field] = $value;
+                        if ((is_string($value) && trim($value) !== '') || is_int($value) || is_float($value) || $value === true) $hasFacts = true;
+                    }
+                    echo json_encode(['response' => [
+                        'success' => true, 'jarvisBuild' => JARVIS_BUILD,
+                        'ai_message' => isset($parsedData['ai_message']) && is_string($parsedData['ai_message']) ? $parsedData['ai_message'] : 'پیش‌نویس برای بازبینی آماده است.',
+                        'action' => $hasFacts ? 'openPropertyModal' : null,
+                        'params' => (object)$params
+                    ]], JSON_UNESCAPED_UNICODE);
                 } else {
-                    echo json_encode(['error' => 'خطا در خواندن اطلاعات هوش مصنوعی.']);
+                    echo json_encode(['error' => JARVIS_BUILD . ': پاسخ مدل قالب مشخصات ملک را رعایت نکرد؛ لطفاً دوباره تلاش کنید.'], JSON_UNESCAPED_UNICODE);
                 }
             // ... (کدهای قبلی)
             } else {
