@@ -15,10 +15,17 @@
 %%   ۳-۳ فصل ارزیابی و نتایج ..................... فصل پنجم مستقل (جدید)
 %%   ۴-۱ اصلاح ادعای میکروسرویس .................. تثبیت + جدول کنش‌ها
 %%   ۴-۲ JWT با HMAC-SHA256 ...................... تثبیت + رابطه راستی‌آزمایی
-%% روش کامپایل: XeLaTeX (دو بار اجرا برای فهرست‌ها)، قلم‌های Noto Sans و
+%% روش کامپایل: LuaLaTeX (دو بار اجرا برای فهرست‌ها)، قلم‌های Noto Sans و
 %% Noto Sans Arabic. بسته‌های لازم: tikz، algorithm، algorithmic، listings.
 %% =====================================================================
 \documentclass[11pt, a4paper]{report}
+%% FIX (compile): موتور الزامی LuaLaTeX است؛ در تک‌لایو ۲۰۲۶ بابل دیگر از
+%% bidi با XeTeX پشتیبانی نمی‌کند و چیدمان راست‌به‌چپ می‌شکند.
+\usepackage{iftex}
+\ifLuaTeX\else
+  \PackageError{thesis}{Please compile with LuaLaTeX (Overleaf: Menu -> Compiler -> LuaLaTeX). XeTeX/pdfTeX bidi is unsupported}{See README.fa.md}%
+  \endinput
+\fi
 \usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=3.5cm]{geometry}
 \usepackage{fontspec}
 
@@ -859,7 +866,8 @@ $ok = hash_equals($expected, $sig);
 
 \noindent\textbf{کد ۴-۲: نگهبان پاسخ ۴۰۳ در کلاینت (فشرده‌شده)}
 \begin{otherlanguage}{english}
-\begin{lstlisting}[language=JavaScript]
+%% FIX (compile): listings زبان JavaScript ندارد؛ Java جایگزین شد.
+\begin{lstlisting}[language=Java]
 async function api(action, body) {
   const r = await fetch('api.php?action=' + action, {
     method: 'POST', body: JSON.stringify(body)

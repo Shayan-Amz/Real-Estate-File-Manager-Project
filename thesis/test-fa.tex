@@ -1,6 +1,11 @@
 %% فایل تست ۱۰ خطی: اگر این فایل فارسی را نشان داد، محیط سالم است؛
 %% اگر سفید بود، مشکل از موتور کامپایلر یا فونت‌هاست (نه پایان‌نامه).
 \documentclass{article}
+\usepackage{iftex}
+\ifLuaTeX\else
+  \PackageError{test-fa}{Please compile with LuaLaTeX (Overleaf: Menu -> Compiler -> LuaLaTeX)}{}%
+  \endinput
+\fi
 \usepackage{fontspec}
 \usepackage[persian, bidi=basic, provide=*]{babel}
 \babelprovide[import, mapdigits]{persian}
