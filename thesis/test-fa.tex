@@ -1,0 +1,31 @@
+%% فایل تست ۱۰ خطی: اگر این فایل فارسی را نشان داد، محیط سالم است؛
+%% اگر سفید بود، مشکل از موتور کامپایلر یا فونت‌هاست (نه پایان‌نامه).
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage[persian, bidi=basic, provide=*]{babel}
+\babelprovide[import, mapdigits, onchar=ids fonts]{persian}
+\babelprovide[import, onchar=ids fonts]{english}
+\tracinglostchars=3
+\babelfont{rm}{NotoSans}[
+  Path = fonts/,
+  Extension = .ttf,
+  Ligatures = TeX,
+  UprightFont = *-Regular,
+  BoldFont = *-Bold
+]
+\babelfont[persian]{rm}{NotoSansArabic}[
+  Path = fonts/,
+  Extension = .ttf,
+  Ligatures = TeX,
+  UprightFont = *-Regular,
+  BoldFont = *-Bold
+]
+\begin{document}
+سلام دنیا! این یک متن آزمایشی فارسی است. ۱۲۳۴۵
+
+عدد فارسی، جدول و فرمول هم باید درست باشند.
+
+\begin{otherlanguage}{english}
+Hello world! This English line must always show. 12345
+\end{otherlanguage}
+\end{document}

@@ -27,10 +27,34 @@
 \babelprovide[import, mapdigits, onchar=ids fonts]{persian}
 \babelprovide[import, onchar=ids fonts]{english}
 
-% Set default/Latin font to Sans Serif in the main (rm) slot
-\babelfont{rm}{Noto Sans}
-% Assign a specific font for Persian text
-\babelfont[persian]{rm}{Noto Sans Arabic}
+%% FIX (fonts): بارگذاری قلم از داخل پروژه (پوشه fonts) تا نمایش فارسی
+%% به فونت نصب‌شده روی سیستم وابسته نباشد. اگر قلم‌ها را در سیستم نصب
+%% کرده‌اید، می‌توانید به‌جای بلوک زیر از نسخه سیستمی استفاده کنید:
+%%   \babelfont{rm}{Noto Sans}
+%%   \babelfont[persian]{rm}{Noto Sans Arabic}
+\tracinglostchars=3 % اگر حرفی در قلم نباشد خطا بده (به‌جای سفید ماندن بی‌صدا)
+% Latin font (Sans Serif) loaded from the project's fonts folder
+\babelfont{rm}{NotoSans}[
+  Path = fonts/,
+  Extension = .ttf,
+  Ligatures = TeX,
+  UprightFont = *-Regular,
+  BoldFont = *-Bold,
+  ItalicFont = *-Regular,
+  ItalicFeatures = {FakeSlant = 0.2},
+  BoldItalicFont = *-Bold,
+  BoldItalicFeatures = {FakeSlant = 0.2}
+]
+% Persian font loaded from the project's fonts folder
+\babelfont[persian]{rm}{NotoSansArabic}[
+  Path = fonts/,
+  Extension = .ttf,
+  Ligatures = TeX,
+  UprightFont = *-Regular,
+  BoldFont = *-Bold,
+  ItalicFont = *-Regular,
+  BoldItalicFont = *-Bold
+]
 
 \usepackage{enumitem}
 \setlist[itemize]{label=\textbullet}
