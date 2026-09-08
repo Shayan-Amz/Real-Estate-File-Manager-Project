@@ -15,21 +15,22 @@
 %%   ۳-۳ فصل ارزیابی و نتایج ..................... فصل پنجم مستقل (جدید)
 %%   ۴-۱ اصلاح ادعای میکروسرویس .................. تثبیت + جدول کنش‌ها
 %%   ۴-۲ JWT با HMAC-SHA256 ...................... تثبیت + رابطه راستی‌آزمایی
-%% روش کامپایل: LuaLaTeX (دو بار اجرا برای فهرست‌ها)، قلم‌های Noto Sans و
+%% روش کامپایل: XeLaTeX (دو بار اجرا برای فهرست‌ها)، قلم‌های Noto Sans و
 %% Noto Sans Arabic. بسته‌های لازم: tikz، algorithm، algorithmic، listings.
 %% =====================================================================
 \documentclass[11pt, a4paper]{report}
-%% FIX (compile): موتور الزامی LuaLaTeX است؛ در تک‌لایو ۲۰۲۶ بابل دیگر از
-%% bidi با XeTeX پشتیبانی نمی‌کند و چیدمان راست‌به‌چپ می‌شکند.
+%% FIX (compile): موتور XeLaTeX با بسته bidi؛ سریع و سازگار با محدودیت زمانی
+%% نسخه رایگان Overleaf (لوالاتک برای این سند بیش از حد کند است).
 \usepackage{iftex}
-\ifLuaTeX\else
-  \PackageError{thesis}{Please compile with LuaLaTeX (Overleaf: Menu -> Compiler -> LuaLaTeX). XeTeX/pdfTeX bidi is unsupported}{See README.fa.md}%
+\ifXeTeX\else
+  \PackageError{thesis}{Please compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)}{See README.fa.md}%
   \endinput
 \fi
 \usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=3.5cm]{geometry}
 \usepackage{fontspec}
 
-\usepackage[persian, bidi=basic, provide=*]{babel}
+%% FIX (compile): bidi=bidi طبق تجویز بابل برای XeTeX (سریع، مناسب سقف زمانی Overleaf رایگان).
+\usepackage[persian, bidi=bidi, provide=*]{babel}
 
 %% FIX (compile): حذف onchar=ids fonts — تعویض خودکار قلم در مرز حروف با
 %% موتور TikZ و محیط لیستینگ تداخل می‌کرد (۱۵۰ خطا، به‌هم‌ریختگی چیدمان و

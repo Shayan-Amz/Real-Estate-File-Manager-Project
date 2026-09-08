@@ -2,12 +2,12 @@
 %% اگر سفید بود، مشکل از موتور کامپایلر یا فونت‌هاست (نه پایان‌نامه).
 \documentclass{article}
 \usepackage{iftex}
-\ifLuaTeX\else
-  \PackageError{test-fa}{Please compile with LuaLaTeX (Overleaf: Menu -> Compiler -> LuaLaTeX)}{}%
+\ifXeTeX\else
+  \PackageError{test-fa}{Please compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX)}{}%
   \endinput
 \fi
 \usepackage{fontspec}
-\usepackage[persian, bidi=basic, provide=*]{babel}
+\usepackage[persian, bidi=bidi, provide=*]{babel}
 \babelprovide[import, mapdigits]{persian}
 \babelprovide[import]{english}
 \tracinglostchars=2

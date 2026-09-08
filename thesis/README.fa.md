@@ -13,22 +13,22 @@
 
 ۱. فایل `thesis-overleaf.zip` را از ریشه همین ریپو دانلود کنید.
 ۲. به سایت Overleaf بروید: **New Project ← Upload Project** و فایل زیپ را انتخاب کنید.
-۳. از منوی گوشه بالا-چپ (**Menu**)، گزینه **Compiler** را روی **LuaLaTeX** بگذارید.
+۳. از منوی گوشه بالا-چپ (**Menu**)، گزینه **Compiler** را روی **XeLaTeX** بگذارید.
 ۴. دکمه **Recompile** را بزنید. خروجی PDF با متن فارسی کامل نمایش داده می‌شود.
 
 > نکته: سرویس‌های آنلاین تک‌فایلی (مثل texviewer) مناسب این پروژه نیستند،
-> چون موتور LuaLaTeX یا قلم فارسی ندارند و متن فارسی را سفید نشان می‌دهند.
+> چون موتور XeLaTeX یا قلم فارسی ندارند و متن فارسی را سفید نشان می‌دهند.
 
 ## روش دوم: کامپایل محلی
 
-- موتور **LuaLaTeX** (حتماً LuaLaTeX، نه XeLaTeX و نه pdfLaTeX) با توزیع کامل TeX Live یا MiKTeX
+- موتور **XeLaTeX** (حتماً XeLaTeX، نه LuaLaTeX و نه pdfLaTeX) با توزیع کامل TeX Live یا MiKTeX
 - بسته‌ها (در نصب کامل به‌صورت پیش‌فرض هستند):
   `tikz` ،`algorithm` ،`algorithmic` ،`listings` ،`graphicx`
 
 ```bash
 cd thesis
-lualatex thesis.tex
-lualatex thesis.tex   # اجرای دوم برای فهرست‌ها و ارجاع‌ها
+xelatex thesis.tex
+xelatex thesis.tex   # اجرای دوم برای فهرست‌ها و ارجاع‌ها
 ```
 
 خروجی: `thesis.pdf`
