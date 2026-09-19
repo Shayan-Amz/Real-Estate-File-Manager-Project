@@ -1,0 +1,27 @@
+{
+  "build": "fix29",
+  "baseline": "a24348e",
+  "date_local": "2026-09-08",
+  "actual_host_recovered": "not yet confirmed",
+  "symptom_reported": "blank or stuck in a private browser window",
+  "direct_host_check": "unavailable from sandbox",
+  "local_checks": {
+    "real_chromium": 10,
+    "sql_fixtures": 9,
+    "service_worker": 5,
+    "failed": 0
+  },
+  "browser": "HeadlessChrome/138.0.7204.0 with intercepted fixture HTTP, no live services",
+  "reproduced_old_failure": "Parser-blocking Neshan dependency prevents old page boot when the SDK stalls",
+  "server_logic": "api.php and stt.php match accepted fix26; fresh API path has only a version header/guard/helper path change",
+  "not_modified": [
+    "host config.php",
+    "root .htaccess",
+    "uploads",
+    "database contents by deployment",
+    "academic sources",
+    "original PDF"
+  ],
+  "artifact": "fix29-safe-rollback.zip",
+  "sha256": "ec487b834260c7f84dc4872cf404c8f4f21429cdee87554b912ac3d4ad8e80a4"
+}

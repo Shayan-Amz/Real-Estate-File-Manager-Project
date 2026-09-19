@@ -1,0 +1,16 @@
+# ⚠️ فایل پیکربندی حاوی رمز دیتابیس و کلیدهای API است.
+#    هرگز کامیت نشود — قالب بدون راز در src/config.example.php هست.
+src/config.php
+
+# بک‌آپ‌ها و آپلودهای تولیدشده
+src/backups/*.json
+src/backups/*.sql
+src/uploads/*
+!src/uploads/index.php
+!src/uploads/.htaccess
+
+# ابزار سیستم‌عامل و ویرایشگر
+.DS_Store
+Thumbs.db
+*.swp
+*~
