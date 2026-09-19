@@ -554,6 +554,9 @@ The application is designed for **shared hosting environments** (cPanel/DirectAd
 | RTL Support | Full, native |
 
 ---
+## 📄 License
+
+This project is **proprietary software**. All rights reserved — see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
