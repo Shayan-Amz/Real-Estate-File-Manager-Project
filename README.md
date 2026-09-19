@@ -452,7 +452,7 @@ This project was developed as a **Bachelor's thesis** at the **University of Sem
 - **Department:** Computer Engineering
 - **Defense:** 2026
 
-The thesis (`thesis/thesis.tex`) is a comprehensive LaTeX document covering:
+The thesis (`thesis/Project Thesis.pdf`) is a comprehensive LaTeX document covering:
 1. Introduction and problem statement
 2. Literature review of property management systems
 3. System design and architecture
